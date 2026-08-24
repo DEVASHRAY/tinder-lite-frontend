@@ -1,0 +1,16 @@
+---
+description: Explain React 19 concepts and compare them with React 18.2
+alwaysApply: true
+---
+
+# React Learning Notes
+
+- When implementing a React 19 API or pattern, explain what it does and why it is being used.
+- Compare every newly introduced React 19 concept with its React 18.2 equivalent or workaround.
+- Include the comparison in the implementation summary so the developer can learn from the change.
+- Add a concise file-level learning comment when a file introduces a React 19 concept.
+- Place learning comments only at the top or bottom of the file, never between imports, logic, or JSX.
+- In the comment, name the React 19 feature and briefly state how React 18.2 handled the same need.
+- Keep comments current when the related implementation changes.
+- Do not add comments that merely narrate obvious code.
+- Keep detailed explanations in the implementation summary rather than turning source files into tutorials.

@@ -1,0 +1,48 @@
+---
+description: Require current Next.js 16 architecture, APIs, and performance practices
+alwaysApply: true
+---
+
+# Next.js 16 Standards
+
+- Use Next.js 16.3 App Router APIs and conventions. Do not copy Next.js 14 patterns without checking the installed documentation in `node_modules/next/dist/docs/`.
+- Explain each newly introduced Next.js 16 concept and compare it with the Next.js 14.1 approach in the implementation summary.
+- Add concise learning comments only at the top or bottom of a file when a new Next.js 16 concept needs source-level context.
+
+## Components and Rendering
+
+- Choose Server and Client Components using current Next.js guidance and measured architectural trade-offs.
+- Use Server Components for server-side data access, secrets, reduced client JavaScript, or streaming when they are the stronger choice.
+- Use Client Components for state, events, effects, custom hooks, or browser APIs, and keep each `"use client"` module graph intentional.
+- Choose static rendering, request-time rendering, streaming, or client rendering per route based on freshness, personalization, latency, and cacheability.
+- Place runtime or uncached work behind meaningful Suspense boundaries when that preserves a useful static shell.
+- Keep values passed to Client Components serializable and minimize the React Server Component payload.
+
+## Async Request APIs and Routing
+
+- Treat `params` and `searchParams` as promises and use generated `PageProps` or `LayoutProps` types.
+- Always await `cookies()`, `headers()`, and other asynchronous request APIs.
+- Read request-time values at the narrowest possible boundary so they do not make an entire route dynamic unnecessarily.
+- Use App Router metadata APIs, route conventions, typed routes, and `next/image` or `next/font` when they are technically strongest.
+
+## Cache Components
+
+- Use Cache Components and `"use cache"` when they provide the best measured caching and rendering design.
+- Give every cached scope intentional `cacheLife` and `cacheTag` semantics instead of relying on accidental defaults.
+- Never access `cookies()`, `headers()`, or `searchParams` inside a cached scope; read them outside and pass serializable values in.
+- Choose `updateTag`, `revalidateTag`, or `revalidatePath` according to read-your-own-writes versus stale-while-revalidate behavior.
+- Account for deployment topology: default in-memory cache entries are not a globally durable cache across serverless instances or deployments.
+
+## BFF and Request Handling
+
+- Use Route Handlers as a thin BFF for secure aggregation, payload shaping, cookie handling, cache policy, and backend isolation.
+- Keep business rules in the Express backend; do not duplicate domain logic in Next.js.
+- Design BFF calls with explicit timeouts, cancellation, error mapping, observability, and minimal payloads.
+- Use `proxy.ts`, not `middleware.ts`, for Next.js 16 request interception.
+- Keep Proxy lightweight: redirects, rewrites, headers, experiments, and optimistic checks only. Do not perform slow fetching or full authorization there.
+
+## Tooling
+
+- Use Turbopack for development and production unless measured incompatibility requires Webpack.
+- Run ESLint directly because `next lint` is removed.
+- The React Compiler is disabled; do not enable it without an explicit measured decision.

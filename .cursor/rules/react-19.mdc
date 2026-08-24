@@ -1,0 +1,20 @@
+---
+description: Require React 19 patterns unless they are technically infeasible
+alwaysApply: true
+---
+
+# React 19 Standards
+
+- React 19.2 APIs are mandatory defaults. Use an older equivalent only when the React 19 approach is technically infeasible.
+- Use Actions for all form submissions and async mutations unless the external API or library makes them infeasible.
+- Use `useActionState` to expose an Action's result and pending state.
+- Use `useFormStatus` in form controls that need their parent form's submission state.
+- Use `useOptimistic` for reversible interface updates that should appear before the server responds.
+- Use `useEffectEvent` only for non-reactive logic called from an Effect. Never use it to bypass Effect dependencies.
+- Use `use()` to read promises or context during rendering when Suspense behavior is intended.
+- Accept `ref` as a normal prop in new function components instead of adding `forwardRef`.
+- Render a context directly as its provider instead of using `.Provider` in new code.
+- Use `<Activity>` when hidden interface state must be preserved. Do not use it for ordinary conditional rendering.
+- Prefer Next.js metadata APIs for document metadata.
+- The React Compiler is disabled. Do not enable it or assume compiler memoization without approval.
+- When a required React 19 pattern is infeasible, briefly document the technical reason before using an older pattern.

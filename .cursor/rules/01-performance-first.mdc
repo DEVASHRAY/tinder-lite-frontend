@@ -1,0 +1,48 @@
+---
+description: Make measured frontend performance the project's highest engineering priority
+alwaysApply: true
+---
+
+# Priority 1: Performance Engineering
+
+- Never treat Tinder Lite as a small or disposable app. Review every change as production-critical for a globally distributed product intended to handle up to one billion daily users, including latency, concurrency, failure modes, cost, observability, caching, and CDN behavior.
+- Treat Tinder Lite as a production performance-engineering project. Feature UI exists mainly to exercise real application flows.
+- Keep JSX and visual work minimal, accessible, and sufficient for measuring realistic behavior.
+- Never claim an optimization without evidence. Record a baseline, state a hypothesis, implement the change, and compare results.
+- Define performance budgets before tuning and protect them in CI when tooling exists.
+- Optimize for real-user LCP, INP, CLS, TTFB, transferred bytes, JavaScript execution, and memory usage.
+- Test important flows on throttled networks, low-end CPUs, cold caches, warm caches, and repeat navigation.
+
+## Rendering and JavaScript
+
+- Follow current Next.js best practices when choosing Server and Client Components. Use Server Components whenever they are the stronger architectural and performance choice; otherwise use Client Components intentionally and keep their boundaries focused.
+- Minimize shipped JavaScript, hydration work, DOM size, rerenders, and main-thread long tasks.
+- Use streaming and meaningful Suspense boundaries to improve progressive rendering.
+- Choose SSR, static generation, revalidation, or client rendering per route using measured trade-offs.
+- Create deliberate route and component chunks; audit dynamic imports, tree shaking, duplicate modules, and dependency cost.
+- Use virtualization for large feeds and move measured CPU-heavy work to Web Workers.
+- Evaluate current React 19 capabilities, component architecture, and manual `useMemo`, `useCallback`, or component memoization. Choose whichever approach is technically strongest for the measured problem, including manual memoization when it is the better option.
+
+## Data, BFF, and Network
+
+- Use the Next.js BFF for secure aggregation, payload shaping, cache control, and hiding backend details.
+- Do not move domain logic into the BFF or add a network hop without a measurable architectural benefit.
+- Prevent request waterfalls; parallelize, deduplicate, preload, or prefetch only when timing data justifies it.
+- Keep serialized data and JSON payloads minimal.
+- Design browser, Next.js, BFF, CDN, and origin caches as one explicit strategy.
+- Set intentional `Cache-Control`, validation, revalidation, invalidation, and stale-data behavior.
+- Use compression, abortable requests, and controlled navigation prefetching.
+
+## Assets and Browser Runtime
+
+- Deliver responsive CDN images with correct dimensions, `sizes`, formats, quality, priority, and placeholders.
+- Upload user media directly to managed object storage through a secure signed flow.
+- Optimize fonts through subsetting, self-hosting when justified, preload discipline, and fallback metrics.
+- Reduce unused CSS and use containment, `content-visibility`, and compositor-friendly animation when measured.
+- Audit third-party scripts, event listeners, scroll work, memory leaks, and browser storage.
+
+## Verification
+
+- Use bundle analysis, browser performance traces, network waterfalls, React profiling, Lighthouse, WebPageTest, and real-user monitoring as appropriate.
+- Report before-and-after measurements, test conditions, regressions, and trade-offs for every performance-focused change.
+- Prefer the simplest architecture that meets the measured budget; remove complexity that produces no verified gain.
