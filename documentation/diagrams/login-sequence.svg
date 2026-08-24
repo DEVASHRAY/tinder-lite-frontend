@@ -35,7 +35,7 @@
     <text x="280" y="176" text-anchor="middle">POST /api/auth/login</text>
 
     <line x1="420" y1="270" x2="700" y2="270" stroke="#344054" stroke-width="2" marker-end="url(#arrow)"/>
-    <text x="560" y="256" text-anchor="middle">POST /login</text>
+    <text x="560" y="256" text-anchor="middle">POST /api/v1/auth/login</text>
 
     <line x1="700" y1="350" x2="980" y2="350" stroke="#344054" stroke-width="2" marker-end="url(#arrow)"/>
     <text x="840" y="336" text-anchor="middle">Find user</text>

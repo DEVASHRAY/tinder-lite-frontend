@@ -35,7 +35,7 @@ flowchart LR
 
 Current backend behavior and constraints:
 
-- The Express API has no route prefix and no CORS middleware.
+- Every Express endpoint is mounted under `/api/v1`; the API has no CORS middleware.
 - Authentication uses an opaque JWT in the `token` HTTP-only cookie.
 - The cookie uses `SameSite=Lax`, path `/`, and `Secure` only in production.
 - The access token and cookie expire after ten minutes; no refresh flow exists.
@@ -117,7 +117,7 @@ sequenceDiagram
     participant DB as MongoDB
 
     Browser->>BFF: POST /api/auth/login
-    BFF->>API: POST /login
+    BFF->>API: POST /api/v1/auth/login
     API->>DB: Find user
     DB-->>API: User record
     API-->>BFF: User payload and Set-Cookie
@@ -143,7 +143,7 @@ sequenceDiagram
     participant DB as MongoDB
 
     Browser->>BFF: GET /api/feed with token cookie
-    BFF->>API: GET /feed with forwarded Cookie
+    BFF->>API: GET /api/v1/feed with forwarded Cookie
     API->>API: Verify JWT and load user
     API->>DB: Query unseen profiles
     DB-->>API: Feed records
@@ -174,12 +174,12 @@ Before production integration:
 
 ## Initial BFF route surface
 
-- `POST /api/auth/login` proxies `POST /login`.
-- `POST /api/auth/signup` proxies `POST /signup`.
-- `POST /api/auth/logout` proxies `POST /logout`.
-- `GET /api/profile` proxies `GET /profile`.
-- `PATCH /api/profile` proxies `PATCH /profile/update`.
-- `GET /api/feed` proxies `GET /feed`.
-- `/api/connections` adapts the existing connection read and mutation endpoints.
+- `POST /api/auth/login` proxies `POST /api/v1/auth/login`.
+- `POST /api/auth/signup` proxies `POST /api/v1/auth/signup`.
+- `POST /api/auth/logout` proxies `POST /api/v1/auth/logout`.
+- `GET /api/profile` proxies `GET /api/v1/profile`.
+- `PATCH /api/profile` proxies `PATCH /api/v1/profile`.
+- `GET /api/feed` proxies `GET /api/v1/feed`.
+- `/api/connections` adapts `/api/v1/connections` read and mutation endpoints.
 
 Each route must use an explicit response type. A generic catch-all proxy is forbidden because it prevents deliberate contracts, caching, observability, and security policy.

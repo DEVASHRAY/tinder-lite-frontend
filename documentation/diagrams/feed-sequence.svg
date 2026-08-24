@@ -35,7 +35,7 @@
     <text x="280" y="171" text-anchor="middle">GET /api/feed with cookie</text>
 
     <line x1="420" y1="255" x2="700" y2="255" stroke="#344054" stroke-width="2" marker-end="url(#arrow)"/>
-    <text x="560" y="241" text-anchor="middle">GET /feed with forwarded Cookie</text>
+    <text x="560" y="241" text-anchor="middle">GET /api/v1/feed with Cookie</text>
 
     <rect x="625" y="295" width="150" height="54" rx="8" fill="#ecfdf3" stroke="#86efac"/>
     <text x="700" y="318" text-anchor="middle" font-size="13" fill="#166534">Verify JWT</text>
