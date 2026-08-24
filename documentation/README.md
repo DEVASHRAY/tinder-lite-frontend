@@ -22,9 +22,12 @@ Every diagram must:
 - Avoid invented services or interactions.
 - Stay synchronized with the related implementation.
 
+## Current documents
+
+- [BFF architecture and ownership](./bff-architecture.md)
+
 ## Planned documents
 
-- BFF architecture and ownership
 - Authentication request sequence
 - Feed loading and prefetch flow
 - Swipe mutation and optimistic update flow

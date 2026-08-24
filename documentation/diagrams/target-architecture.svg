@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1560" height="480" viewBox="0 0 1560 480" role="img" aria-labelledby="title description">
+  <title id="title">Proposed Tinder Lite target architecture</title>
+  <desc id="description">The browser reaches a CDN and ingress, which routes to the Next.js frontend and BFF. The BFF calls the Express domain API, which queries MongoDB. Next.js and Express emit telemetry to an undecided observability provider.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#344054"/>
+    </marker>
+    <marker id="dottedArrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#667085"/>
+    </marker>
+  </defs>
+  <rect width="1560" height="480" fill="#ffffff"/>
+  <text x="40" y="36" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#101828">Proposed target architecture</text>
+
+  <rect x="30" y="70" width="220" height="250" rx="12" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2"/>
+  <text x="50" y="102" font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="#475467">CLIENT</text>
+  <rect x="60" y="155" width="160" height="80" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="140" y="202" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" font-weight="600" fill="#1e3a8a">Web browser</text>
+
+  <rect x="290" y="70" width="250" height="250" rx="12" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2"/>
+  <text x="310" y="102" font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="#475467">GLOBAL DELIVERY</text>
+  <rect x="325" y="145" width="180" height="100" rx="10" fill="#faf5ff" stroke="#9333ea" stroke-width="2"/>
+  <text x="415" y="184" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" font-weight="600" fill="#581c87">CDN and ingress</text>
+  <text x="415" y="210" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#6b21a8">Provider TBD</text>
+
+  <rect x="580" y="70" width="470" height="250" rx="12" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2"/>
+  <text x="600" y="102" font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="#475467">APPLICATION SERVICES</text>
+  <rect x="615" y="145" width="180" height="100" rx="10" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="705" y="180" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" font-weight="600" fill="#14532d">Next.js</text>
+  <text x="705" y="205" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#166534">Frontend and BFF</text>
+  <rect x="835" y="145" width="180" height="100" rx="10" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="925" y="180" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" font-weight="600" fill="#14532d">Express API</text>
+  <text x="925" y="205" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#166534">Domain authority</text>
+
+  <rect x="1090" y="70" width="210" height="250" rx="12" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2"/>
+  <text x="1110" y="102" font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="#475467">DATA STORE</text>
+  <rect x="1120" y="155" width="150" height="80" rx="10" fill="#fff7ed" stroke="#ea580c" stroke-width="2"/>
+  <text x="1195" y="202" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" font-weight="600" fill="#7c2d12">MongoDB</text>
+
+  <rect x="1340" y="70" width="190" height="350" rx="12" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2"/>
+  <text x="1360" y="102" font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="#475467">EXTERNAL</text>
+  <rect x="1370" y="285" width="130" height="90" rx="10" fill="#fefce8" stroke="#ca8a04" stroke-width="2"/>
+  <text x="1435" y="322" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" font-weight="600" fill="#713f12">Observability</text>
+  <text x="1435" y="347" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#854d0e">Provider TBD</text>
+
+  <line x1="220" y1="195" x2="325" y2="195" stroke="#344054" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <text x="272" y="178" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#344054">HTTPS</text>
+  <line x1="505" y1="195" x2="615" y2="195" stroke="#344054" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <text x="560" y="178" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#344054">Route</text>
+  <line x1="795" y1="195" x2="835" y2="195" stroke="#344054" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <text x="815" y="178" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#344054">Private</text>
+  <line x1="1015" y1="195" x2="1120" y2="195" stroke="#344054" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <text x="1067" y="178" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#344054">Mongoose</text>
+
+  <path d="M705 245 C760 360, 1240 380, 1370 330" fill="none" stroke="#667085" stroke-width="2" stroke-dasharray="7 6" marker-end="url(#dottedArrow)"/>
+  <path d="M925 245 C980 330, 1250 350, 1370 330" fill="none" stroke="#667085" stroke-width="2" stroke-dasharray="7 6" marker-end="url(#dottedArrow)"/>
+  <text x="1090" y="390" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#667085">Telemetry without secrets or personal data</text>
+</svg>

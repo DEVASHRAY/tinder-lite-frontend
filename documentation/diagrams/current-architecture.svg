@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="330" viewBox="0 0 1200 330" role="img" aria-labelledby="title description">
+  <title id="title">Verified current Tinder Lite architecture</title>
+  <desc id="description">The web browser calls the Express API directly, and Express queries MongoDB through Mongoose.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#344054"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="330" fill="#ffffff"/>
+  <text x="40" y="36" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#101828">Verified current architecture</text>
+
+  <rect x="40" y="70" width="280" height="210" rx="12" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2"/>
+  <text x="60" y="102" font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="#475467">CLIENT</text>
+  <rect x="80" y="140" width="200" height="80" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="180" y="187" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="600" fill="#1e3a8a">Web browser</text>
+
+  <rect x="460" y="70" width="280" height="210" rx="12" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2"/>
+  <text x="480" y="102" font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="#475467">APPLICATION SERVICE</text>
+  <rect x="500" y="140" width="200" height="80" rx="10" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="600" y="174" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="600" fill="#14532d">Express API</text>
+  <text x="600" y="199" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#166534">JWT and domain logic</text>
+
+  <rect x="880" y="70" width="280" height="210" rx="12" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2"/>
+  <text x="900" y="102" font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="#475467">DATA STORE</text>
+  <rect x="920" y="140" width="200" height="80" rx="10" fill="#fff7ed" stroke="#ea580c" stroke-width="2"/>
+  <text x="1020" y="187" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="600" fill="#7c2d12">MongoDB</text>
+
+  <line x1="280" y1="180" x2="500" y2="180" stroke="#344054" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <rect x="330" y="149" width="120" height="24" rx="5" fill="#ffffff"/>
+  <text x="390" y="166" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#344054">Cross-origin HTTP</text>
+
+  <line x1="700" y1="180" x2="920" y2="180" stroke="#344054" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <rect x="752" y="149" width="116" height="24" rx="5" fill="#ffffff"/>
+  <text x="810" y="166" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#344054">Mongoose queries</text>
+</svg>
