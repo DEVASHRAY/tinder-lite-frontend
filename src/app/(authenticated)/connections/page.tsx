@@ -1,0 +1,284 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import type { ReactNode } from "react";
+
+import { ConnectionsConstantsCollection } from "@/features/connections/connections.constants";
+import { loadConnections } from "@/features/connections/connections.data";
+import type {
+  ConnectionList,
+  ConnectionsLoadResult,
+} from "@/features/connections/connections.types";
+import { ProfileAvatar } from "@/features/profile/profile-avatar";
+
+export const metadata: Metadata = {
+  title: "Connections | Tinder Lite",
+  description: "View your Tinder Lite matches and connections.",
+};
+
+interface ResolveConnectionListInput {
+  value?: string | string[];
+}
+
+interface ConnectionTabProps {
+  active: boolean;
+  children: ReactNode;
+  href: string;
+}
+
+interface GetEmptyStateInput {
+  connectionType: ConnectionList;
+}
+
+interface EmptyStateContent {
+  message: string;
+  title: string;
+}
+
+const resolveConnectionList = ({
+  value,
+}: ResolveConnectionListInput): ConnectionList | undefined => {
+  if (!value || Array.isArray(value)) {
+    return undefined;
+  }
+
+  switch (value) {
+    case ConnectionsConstantsCollection.ConnectionList.Matches:
+      return ConnectionsConstantsCollection.ConnectionList.Matches;
+    case ConnectionsConstantsCollection.ConnectionList.Received:
+      return ConnectionsConstantsCollection.ConnectionList.Received;
+    case ConnectionsConstantsCollection.ConnectionList.Sent:
+      return ConnectionsConstantsCollection.ConnectionList.Sent;
+    default:
+      return undefined;
+  }
+};
+
+const ConnectionTab = ({
+  active,
+  children,
+  href,
+}: ConnectionTabProps) => {
+  return (
+    <Link
+      href={href}
+      aria-current={active ? "page" : undefined}
+      className={
+        active
+          ? "rounded-xl bg-zinc-950 px-4 py-2.5 text-sm font-semibold text-white shadow-sm"
+          : "rounded-xl px-4 py-2.5 text-sm font-semibold text-zinc-500 transition hover:bg-white hover:text-zinc-950"
+      }
+    >
+      {children}
+    </Link>
+  );
+};
+
+const getEmptyState = ({
+  connectionType,
+}: GetEmptyStateInput): EmptyStateContent => {
+  switch (connectionType) {
+    case ConnectionsConstantsCollection.ConnectionList.Received:
+      return {
+        message: "When someone likes you, they’ll appear here.",
+        title: "No new likes yet",
+      };
+    case ConnectionsConstantsCollection.ConnectionList.Sent:
+      return {
+        message: "Profiles you choose with the heart will appear here.",
+        title: "You haven't sent any likes",
+      };
+    default:
+      return {
+        message: "When you both choose each other, your matches will appear here.",
+        title: "No matches yet",
+      };
+  }
+};
+
+const ConnectionsPage = async ({
+  searchParams,
+}: PageProps<"/connections">) => {
+  let typeValue: string | string[] | undefined;
+
+  try {
+    const resolvedSearchParams = await searchParams;
+    typeValue = resolvedSearchParams["type"];
+  } catch (error) {
+    if (error instanceof Error) {
+      typeValue = undefined;
+    }
+  }
+
+  const connectionType = resolveConnectionList({
+    value: typeValue,
+  });
+
+  if (!connectionType) {
+    redirect("/connections?type=matches");
+  }
+
+  let result: ConnectionsLoadResult | null = null;
+
+  try {
+    result = await loadConnections({
+      connectionType,
+    });
+  } catch (error) {
+    return (
+      <main className="min-h-[calc(100svh-4rem)] bg-[#fff8f6] px-4 py-12 text-zinc-950 sm:px-6">
+        <div
+          role="alert"
+          className="mx-auto max-w-xl rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-800"
+        >
+          {error instanceof Error
+            ? "Unable to load your connections"
+            : "Unexpected connections failure"}
+        </div>
+      </main>
+    );
+  }
+
+  if (
+    result.outcome ===
+    ConnectionsConstantsCollection.ConnectionsLoadOutcome.Unauthorized
+  ) {
+    redirect("/login");
+  }
+
+  if (
+    result.outcome ===
+    ConnectionsConstantsCollection.ConnectionsLoadOutcome.Failure
+  ) {
+    return (
+      <main className="min-h-[calc(100svh-4rem)] bg-[#fff8f6] px-4 py-12 text-zinc-950 sm:px-6">
+        <div
+          role="alert"
+          className="mx-auto max-w-xl rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-800"
+        >
+          {result.message}
+        </div>
+      </main>
+    );
+  }
+
+  const emptyState = getEmptyState({
+    connectionType,
+  });
+
+  return (
+    <main className="relative isolate min-h-[calc(100svh-4rem)] overflow-hidden bg-[#fff8f6] px-4 py-10 text-zinc-950 sm:px-6 sm:py-14">
+      <div
+        aria-hidden="true"
+        className="absolute top-0 left-1/2 -z-10 h-96 w-[48rem] -translate-x-1/2 rounded-full bg-[#ff9abb]/20 blur-3xl"
+      />
+
+      <section className="mx-auto max-w-6xl">
+        <p className="text-xs font-bold tracking-[0.18em] text-[#d91d60] uppercase">
+          Your people
+        </p>
+        <h1 className="mt-3 text-4xl font-semibold tracking-[-0.045em] sm:text-5xl">
+          Connections
+        </h1>
+        <p className="mt-4 max-w-xl leading-7 text-zinc-600">
+          Keep up with the people you&apos;ve noticed and the connections
+          you&apos;ve made.
+        </p>
+
+        <nav
+          aria-label="Connection categories"
+          className="mt-8 inline-flex flex-wrap rounded-2xl border border-zinc-200/80 bg-white/60 p-1.5 shadow-sm backdrop-blur"
+        >
+          <ConnectionTab
+            active={
+              connectionType ===
+              ConnectionsConstantsCollection.ConnectionList.Matches
+            }
+            href="/connections?type=matches"
+          >
+            Matches
+          </ConnectionTab>
+          <ConnectionTab
+            active={
+              connectionType ===
+              ConnectionsConstantsCollection.ConnectionList.Received
+            }
+            href="/connections?type=received"
+          >
+            Likes you
+          </ConnectionTab>
+          <ConnectionTab
+            active={
+              connectionType ===
+              ConnectionsConstantsCollection.ConnectionList.Sent
+            }
+            href="/connections?type=sent"
+          >
+            Sent
+          </ConnectionTab>
+        </nav>
+
+        {result.profiles.length ? (
+          <ul
+            aria-label="Connection profiles"
+            className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+          >
+            {result.profiles.map((profile) => (
+              <li key={profile.id}>
+                <article className="flex items-center gap-4 rounded-[1.75rem] border border-white/80 bg-white/85 p-4 shadow-[0_22px_60px_-38px_rgba(72,24,49,0.55)] backdrop-blur">
+                  <ProfileAvatar
+                    className="size-20 rounded-2xl text-2xl"
+                    name={profile.name}
+                    photoUrl={profile.photoUrl}
+                    sizes="80px"
+                  />
+                  <div className="min-w-0">
+                    <h2 className="truncate text-lg font-semibold tracking-tight">
+                      {profile.name}, {profile.age}
+                    </h2>
+                    <p className="mt-1 text-sm text-zinc-500 capitalize">
+                      {profile.gender}
+                    </p>
+                  </div>
+                </article>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div className="mt-10 rounded-[2rem] border border-dashed border-zinc-300 bg-white/65 px-6 py-16 text-center backdrop-blur">
+            <span
+              aria-hidden="true"
+              className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-[#fff0f5] text-2xl text-[#f32672]"
+            >
+              ♥
+            </span>
+            <h2 className="mt-5 text-xl font-semibold">
+              {emptyState.title}
+            </h2>
+            <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-zinc-500">
+              {emptyState.message}
+            </p>
+          </div>
+        )}
+      </section>
+    </main>
+  );
+};
+
+export default ConnectionsPage;
+
+/*
+ * Learning notes
+ *
+ * Next.js 16 async search parameters
+ * - Generated `PageProps` provides the route-aware type and `searchParams` is
+ *   awaited before selecting the server-rendered connection category.
+ * - A missing or unsupported `type` redirects to the canonical
+ *   `/connections?type=matches` URL, keeping the address bar and active tab in
+ *   sync.
+ * - Next.js 14.1 exposed `searchParams` synchronously in page props.
+ *
+ * Server rendering
+ * - Only the selected category is requested, avoiding a three-request waterfall
+ *   and unnecessary payload for tabs the user has not opened.
+ */
