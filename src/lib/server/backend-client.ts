@@ -1,10 +1,12 @@
 import "server-only";
 
 interface BackendRequestInput {
-  path: string;
-  method: string;
   body?: string;
+  contentType?: string;
   cookie?: string;
+  method: string;
+  path: string;
+  signal?: AbortSignal;
 }
 
 const getBackendOrigin = (): string => {
@@ -21,11 +23,15 @@ export const requestBackend = async ({
   path,
   method,
   body,
+  contentType,
   cookie,
+  signal,
 }: BackendRequestInput): Promise<Response> => {
   const headers = new Headers();
 
-  if (body) {
+  if (contentType) {
+    headers.set("content-type", contentType);
+  } else if (body) {
     headers.set("content-type", "application/json");
   }
 
@@ -39,6 +45,7 @@ export const requestBackend = async ({
       body,
       headers,
       cache: "no-store",
+      signal,
     });
   } catch (error) {
     if (error instanceof Error) {
@@ -71,7 +78,14 @@ export const requestBackend = async ({
  *   path   = `/api/v1/auth/login`
  *   result = `https://api.tinder-lite.com/api/v1/auth/login`
  *
+ * Request content type
+ * - An incoming content type is forwarded unchanged.
+ * - A request with a body but no content type defaults to `application/json`,
+ *   which matches the current Express API contract.
+ *
  * Fetch caching
  * - Next.js extends server-side `fetch`. `cache: "no-store"` makes every
  *   request reach Express instead of entering Next.js's persistent data cache.
+ * - Passing the browser request signal cancels the Express request when the
+ *   browser disconnects before the response completes.
  */

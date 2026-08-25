@@ -8,6 +8,12 @@ The Next.js Backend for Frontend (BFF) gives the browser a same-origin, frontend
 
 The BFF is not a second domain backend. It owns transport concerns: secure cookie forwarding, response shaping, cache policy, request cancellation, timeout enforcement, error normalization, and frontend observability.
 
+## Temporary development proxy
+
+Until Nginx is introduced, one dynamic Next.js Route Handler forwards `/api/*` to the fixed Express origin. It preserves the backend URL contract, so the browser and Express both use paths such as `/api/v1/auth/login`.
+
+This first implementation is intentionally transport-only: it does not shape payloads or accept a destination origin from the browser. In production, Nginx will route `/api/*` directly to Express and `/` to Next.js; the temporary catch-all Route Handler will then be removed. Route-specific BFF endpoints should be added only when Next.js provides measurable frontend-specific value.
+
 ## Verified current architecture
 
 ![Verified current architecture](./diagrams/current-architecture.svg)
@@ -116,12 +122,12 @@ sequenceDiagram
     participant API as Express API
     participant DB as MongoDB
 
-    Browser->>BFF: POST /api/auth/login
+    Browser->>BFF: POST /api/v1/auth/login
     BFF->>API: POST /api/v1/auth/login
     API->>DB: Find user
     DB-->>API: User record
     API-->>BFF: User payload and Set-Cookie
-    BFF-->>Browser: Shaped payload and forwarded Set-Cookie
+    BFF-->>Browser: Unchanged response and Set-Cookie
 ```
 
 </details>
@@ -142,13 +148,13 @@ sequenceDiagram
     participant API as Express API
     participant DB as MongoDB
 
-    Browser->>BFF: GET /api/feed with token cookie
+    Browser->>BFF: GET /api/v1/feed with token cookie
     BFF->>API: GET /api/v1/feed with forwarded Cookie
     API->>API: Verify JWT and load user
     API->>DB: Query unseen profiles
     DB-->>API: Feed records
     API-->>BFF: Feed response
-    BFF-->>Browser: Minimal private response
+    BFF-->>Browser: Unchanged private response
 ```
 
 </details>
@@ -172,14 +178,11 @@ Before production integration:
 - Define refresh or reauthentication behavior for the ten-minute token expiry.
 - Add abuse protection and rate limiting at appropriate ingress and backend boundaries.
 
-## Initial BFF route surface
+## Temporary proxy surface
 
-- `POST /api/auth/login` proxies `POST /api/v1/auth/login`.
-- `POST /api/auth/signup` proxies `POST /api/v1/auth/signup`.
-- `POST /api/auth/logout` proxies `POST /api/v1/auth/logout`.
-- `GET /api/profile` proxies `GET /api/v1/profile`.
-- `PATCH /api/profile` proxies `PATCH /api/v1/profile`.
-- `GET /api/feed` proxies `GET /api/v1/feed`.
-- `/api/connections` adapts `/api/v1/connections` read and mutation endpoints.
+- Browser requests preserve the Express path: `/api/v1/*`.
+- The proxy supports GET, HEAD, POST, PUT, PATCH, and DELETE.
+- The destination origin always comes from server-only `TINDER_API_ORIGIN`.
+- The proxy is temporary infrastructure, not a second domain API.
 
-Each route must use an explicit response type. A generic catch-all proxy is forbidden because it prevents deliberate contracts, caching, observability, and security policy.
+Future route-specific BFF endpoints must use explicit contracts and policies. A generic application proxy must not remain after Nginx takes ownership of `/api/*`.

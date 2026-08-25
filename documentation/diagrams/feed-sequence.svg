@@ -32,7 +32,7 @@
 
   <g font-family="Arial, sans-serif" font-size="14" fill="#344054">
     <line x1="140" y1="185" x2="420" y2="185" stroke="#344054" stroke-width="2" marker-end="url(#arrow)"/>
-    <text x="280" y="171" text-anchor="middle">GET /api/feed with cookie</text>
+    <text x="280" y="171" text-anchor="middle">GET /api/v1/feed with cookie</text>
 
     <line x1="420" y1="255" x2="700" y2="255" stroke="#344054" stroke-width="2" marker-end="url(#arrow)"/>
     <text x="560" y="241" text-anchor="middle">GET /api/v1/feed with Cookie</text>
@@ -51,6 +51,6 @@
     <text x="560" y="526" text-anchor="middle" fill="#667085">Feed response</text>
 
     <line x1="420" y1="610" x2="140" y2="610" stroke="#667085" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#returnArrow)"/>
-    <text x="280" y="596" text-anchor="middle" fill="#667085">Minimal private response</text>
+    <text x="280" y="596" text-anchor="middle" fill="#667085">Unchanged private response</text>
   </g>
 </svg>
