@@ -1,6 +1,5 @@
-import { Suspense, type ReactNode } from "react";
+import type { ReactNode } from "react";
 
-import { AppHeader } from "@/features/navigation/app-header";
 import { AuthenticatedHeader } from "@/features/navigation/authenticated-header";
 
 interface AuthenticatedLayoutProps {
@@ -10,9 +9,7 @@ interface AuthenticatedLayoutProps {
 const AuthenticatedLayout = ({ children }: AuthenticatedLayoutProps) => {
   return (
     <>
-      <Suspense fallback={<AppHeader />}>
-        <AuthenticatedHeader />
-      </Suspense>
+      <AuthenticatedHeader />
       {children}
     </>
   );
@@ -28,8 +25,9 @@ export default AuthenticatedLayout;
  *   `(authenticated)/feed` remains `/feed`.
  * - This layout owns the shared authenticated header but does not act as the
  *   security boundary.
- * - The fixed-size header fallback streams immediately while the viewer avatar
- *   loads without shifting the page shell.
+ * - The header waits for the viewer avatar so the Client Component hydrates
+ *   against one tree. A Suspense fallback header previously mismatched the
+ *   resolved avatar and blocked clicks with the Next.js overlay.
  * - Next.js layouts can be reused during client navigation, so `proxy.ts`
  *   performs the centralized optimistic cookie check instead.
  * - Express still validates the JWT and authorizes every data request.

@@ -23,6 +23,7 @@ export const ProfileAvatar = ({
         <Image
           fill
           alt={`Portrait of ${name}`}
+          draggable={false}
           sizes={sizes}
           src={photoUrl}
           className="object-cover"

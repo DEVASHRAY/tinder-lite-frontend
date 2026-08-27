@@ -5,6 +5,8 @@ import { ConnectionsSchemasCollection } from "@/features/connections/connections
 import type {
   ConnectionsLoadResult,
   LoadConnectionsInput,
+  LoadPeerConnectionInput,
+  PeerConnectionLoadResult,
 } from "@/features/connections/connections.types";
 import { requestBackend } from "@/lib/server/backend-client";
 import { getAuthenticationCookieHeader } from "@/lib/server/session";
@@ -58,8 +60,8 @@ export const loadConnections = async ({
     }
 
     return {
+      connections: parsedResponse.data.data,
       outcome: ConnectionsConstantsCollection.ConnectionsLoadOutcome.Success,
-      profiles: parsedResponse.data.data,
     };
   } catch (error) {
     return {
@@ -68,6 +70,71 @@ export const loadConnections = async ({
           ? "Unable to load your connections"
           : "Unexpected connections failure",
       outcome: ConnectionsConstantsCollection.ConnectionsLoadOutcome.Failure,
+    };
+  }
+};
+
+export const loadPeerConnection = async ({
+  peerUserId,
+}: LoadPeerConnectionInput): Promise<PeerConnectionLoadResult> => {
+  try {
+    const cookieHeader = await getAuthenticationCookieHeader();
+
+    if (!cookieHeader) {
+      return {
+        outcome:
+          ConnectionsConstantsCollection.PeerConnectionLoadOutcome.Unauthorized,
+      };
+    }
+
+    const response = await requestBackend({
+      cookie: cookieHeader,
+      method: "GET",
+      path: `/api/v1/connections/peer/${encodeURIComponent(peerUserId)}`,
+    });
+
+    if (response.status === 401) {
+      return {
+        outcome:
+          ConnectionsConstantsCollection.PeerConnectionLoadOutcome.Unauthorized,
+      };
+    }
+
+    if (response.status === 404) {
+      return {
+        outcome: ConnectionsConstantsCollection.PeerConnectionLoadOutcome.Missing,
+      };
+    }
+
+    if (!response.ok) {
+      return {
+        outcome: ConnectionsConstantsCollection.PeerConnectionLoadOutcome.Failure,
+      };
+    }
+
+    const parsedResponse = ConnectionsSchemasCollection.peerResponse.safeParse(
+      await response.json(),
+    );
+
+    if (!parsedResponse.success) {
+      return {
+        outcome: ConnectionsConstantsCollection.PeerConnectionLoadOutcome.Failure,
+      };
+    }
+
+    return {
+      connection: parsedResponse.data.data,
+      outcome: ConnectionsConstantsCollection.PeerConnectionLoadOutcome.Success,
+    };
+  } catch (error) {
+    if (error instanceof Error) {
+      return {
+        outcome: ConnectionsConstantsCollection.PeerConnectionLoadOutcome.Failure,
+      };
+    }
+
+    return {
+      outcome: ConnectionsConstantsCollection.PeerConnectionLoadOutcome.Failure,
     };
   }
 };

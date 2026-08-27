@@ -35,6 +35,9 @@ export const logoutAction = async (
       };
     }
 
+    // Load login as a new document so the header never calls redirect() during render.
+    window.location.assign("/login");
+
     return {
       message: "",
       success: true,

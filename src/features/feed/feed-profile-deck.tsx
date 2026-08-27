@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   useOptimistic,
@@ -26,6 +27,7 @@ interface FeedProfileDeckProps {
 interface DragSession {
   pointerId: number;
   startX: number;
+  startY: number;
 }
 
 interface CompleteSwipeInput {
@@ -39,7 +41,10 @@ interface CardTransformInput {
 }
 
 const SWIPE_THRESHOLD = 92;
+const TAP_MOVE_LIMIT = 28;
 const VISIBLE_CARD_COUNT = 3;
+const FEED_PILL_CLASS_NAME =
+  "rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white/80 backdrop-blur-md";
 
 const getCardTransform = ({
   dragOffset,
@@ -75,6 +80,8 @@ export const FeedProfileDeck = ({ profiles }: FeedProfileDeckProps) => {
   );
   const dragSessionRef = useRef<DragSession | null>(null);
   const frameRequestRef = useRef(0);
+  const pointerTravelRef = useRef(0);
+  const didOpenProfileRef = useRef(false);
   const queuedOffsetRef = useRef(0);
 
   const currentProfile = profiles[optimisticProfileIndex];
@@ -90,6 +97,20 @@ export const FeedProfileDeck = ({ profiles }: FeedProfileDeckProps) => {
 
     window.cancelAnimationFrame(frameRequestRef.current);
     frameRequestRef.current = 0;
+  };
+
+  const openCurrentProfile = () => {
+    if (
+      didOpenProfileRef.current ||
+      exitDirection ||
+      isSwipePending ||
+      !currentProfile
+    ) {
+      return;
+    }
+
+    didOpenProfileRef.current = true;
+    router.push(`/people/${currentProfile.id}`);
   };
 
   const completeSwipe = ({ direction }: CompleteSwipeInput) => {
@@ -115,12 +136,13 @@ export const FeedProfileDeck = ({ profiles }: FeedProfileDeckProps) => {
       return;
     }
 
-    event.currentTarget.setPointerCapture(event.pointerId);
+    pointerTravelRef.current = 0;
+    didOpenProfileRef.current = false;
     dragSessionRef.current = {
       pointerId: event.pointerId,
       startX: event.clientX,
+      startY: event.clientY,
     };
-    setIsDragging(true);
   };
 
   const handlePointerMove = (event: PointerEvent<HTMLElement>) => {
@@ -130,7 +152,20 @@ export const FeedProfileDeck = ({ profiles }: FeedProfileDeckProps) => {
       return;
     }
 
-    queuedOffsetRef.current = event.clientX - dragSession.startX;
+    const horizontalOffset = event.clientX - dragSession.startX;
+    const verticalOffset = event.clientY - dragSession.startY;
+    pointerTravelRef.current = Math.hypot(horizontalOffset, verticalOffset);
+
+    if (pointerTravelRef.current < TAP_MOVE_LIMIT) {
+      return;
+    }
+
+    if (!event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.setPointerCapture(event.pointerId);
+      setIsDragging(true);
+    }
+
+    queuedOffsetRef.current = horizontalOffset;
 
     if (frameRequestRef.current) {
       return;
@@ -150,6 +185,7 @@ export const FeedProfileDeck = ({ profiles }: FeedProfileDeckProps) => {
     }
 
     const finalOffset = event.clientX - dragSession.startX;
+    const verticalTravel = event.clientY - dragSession.startY;
 
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
@@ -159,9 +195,15 @@ export const FeedProfileDeck = ({ profiles }: FeedProfileDeckProps) => {
     cancelPendingFrame();
     setIsDragging(false);
     setDragOffset(finalOffset);
+    pointerTravelRef.current = Math.hypot(finalOffset, verticalTravel);
 
     if (Math.abs(finalOffset) < SWIPE_THRESHOLD) {
       setDragOffset(0);
+
+      if (pointerTravelRef.current < TAP_MOVE_LIMIT) {
+        openCurrentProfile();
+      }
+
       return;
     }
 
@@ -185,6 +227,12 @@ export const FeedProfileDeck = ({ profiles }: FeedProfileDeckProps) => {
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      openCurrentProfile();
+      return;
+    }
+
     if (event.key === "ArrowLeft") {
       event.preventDefault();
       completeSwipe({
@@ -198,6 +246,14 @@ export const FeedProfileDeck = ({ profiles }: FeedProfileDeckProps) => {
         direction: FeedConstantsCollection.SwipeDirection.Right,
       });
     }
+  };
+
+  const handleCardClick = () => {
+    if (pointerTravelRef.current >= TAP_MOVE_LIMIT) {
+      return;
+    }
+
+    openCurrentProfile();
   };
 
   const handleCardTransitionEnd = (
@@ -327,8 +383,9 @@ export const FeedProfileDeck = ({ profiles }: FeedProfileDeckProps) => {
                 <article
                   key={profile.id}
                   aria-hidden={!isTopCard}
-                  aria-label={`${profile.name}, ${profile.age}`}
+                  aria-label={`${profile.name}, ${profile.age}. Open profile`}
                   tabIndex={isTopCard ? 0 : -1}
+                  onClick={isTopCard ? handleCardClick : undefined}
                   onKeyDown={isTopCard ? handleKeyDown : undefined}
                   onPointerCancel={
                     isTopCard ? handlePointerCancel : undefined
@@ -344,7 +401,7 @@ export const FeedProfileDeck = ({ profiles }: FeedProfileDeckProps) => {
                   } ${
                     isDragging && isTopCard
                       ? "cursor-grabbing"
-                      : "transition-transform duration-400 ease-[cubic-bezier(0.22,1,0.36,1)]"
+                      : "cursor-pointer transition-transform duration-400 ease-[cubic-bezier(0.22,1,0.36,1)]"
                   } focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#f32672]/35`}
                   style={{
                     opacity: 1 - position * 0.16,
@@ -358,7 +415,7 @@ export const FeedProfileDeck = ({ profiles }: FeedProfileDeckProps) => {
                       fill
                       alt={`Portrait of ${profile.name}`}
                       draggable={false}
-                      fetchPriority={isTopCard ? "high" : "auto"}
+                      priority={isTopCard}
                       sizes="(max-width: 640px) calc(100vw - 32px), 464px"
                       src={profile.photoUrl}
                       className="pointer-events-none object-cover"
@@ -393,19 +450,30 @@ export const FeedProfileDeck = ({ profiles }: FeedProfileDeckProps) => {
                   <div className="absolute right-0 bottom-0 left-0 p-7 text-center text-white sm:p-9">
                     <h2 className="text-4xl font-semibold tracking-[-0.045em] sm:text-5xl">
                       {profile.name}
-                      <span className="ml-2 font-light text-white/75">
+                    </h2>
+                    <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+                      <span className={`${FEED_PILL_CLASS_NAME} tabular-nums`}>
                         {profile.age}
                       </span>
-                    </h2>
-                    <div className="mt-4 flex items-center justify-center gap-2">
-                      <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-semibold capitalize text-white/80 backdrop-blur-md">
+                      {profile.jobTitle ? (
+                        <span className={FEED_PILL_CLASS_NAME}>
+                          {profile.jobTitle}
+                        </span>
+                      ) : null}
+                      {profile.location?.city ? (
+                        <span className={FEED_PILL_CLASS_NAME}>
+                          {profile.location.city}
+                        </span>
+                      ) : null}
+                      <span className={`${FEED_PILL_CLASS_NAME} capitalize`}>
                         {profile.gender}
                       </span>
-                      <span className="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white/80 backdrop-blur-md">
-                        <span className="size-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)]" />
-                        Active profile
-                      </span>
                     </div>
+                    {profile.bio ? (
+                      <p className="mt-4 line-clamp-3 text-sm leading-6 text-white/85">
+                        {profile.bio}
+                      </p>
+                    ) : null}
                   </div>
                 </article>
               );
@@ -452,6 +520,13 @@ export const FeedProfileDeck = ({ profiles }: FeedProfileDeckProps) => {
             </button>
           </div>
 
+          <Link
+            href={`/people/${currentProfile.id}`}
+            className="relative z-40 mt-5 rounded-lg px-3 py-2 text-sm font-semibold text-[#d91d60] transition hover:text-[#b21850] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#f32672]/20"
+          >
+            View profile
+          </Link>
+
           {swipeError ? (
             <p
               role="alert"
@@ -489,6 +564,13 @@ export const FeedProfileDeck = ({ profiles }: FeedProfileDeckProps) => {
  *   the React 19 Action lifecycle.
  * - React 18.2 required separate request, pending, optimistic, and rollback state
  *   coordinated manually inside event handlers.
+ *
+ * Card tap vs swipe
+ * - Pointer capture starts only after the pointer has moved, so a tap can still
+ *   fire `click` and open `/people/[id]`. A `<Link>` wrapping the swipe surface
+ *   would fight dragging.
+ * - Next.js 16 still recommends `<Link>` for ordinary navigation; this is the
+ *   swipe exception. Next.js 14.1 used the same App Router `useRouter().push`.
  *
  * Next batch refresh
  * - `router.refresh()` requests a new Server Component payload without a full

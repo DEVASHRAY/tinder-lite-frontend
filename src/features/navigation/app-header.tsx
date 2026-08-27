@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { redirect, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useActionState, type ReactNode } from "react";
 
 import {
@@ -50,12 +50,9 @@ export const AppHeader = ({ viewer }: AppHeaderProps) => {
     logoutAction,
     initialLogoutActionState,
   );
+  const isPersonDetails = pathname.startsWith("/people/");
   const isProfileActive =
     pathname === "/profile" || pathname.startsWith("/profile/");
-
-  if (logoutState.success) {
-    redirect("/login");
-  }
 
   return (
     <header className="sticky top-0 z-50 border-b border-zinc-900/5 bg-white/80 backdrop-blur-xl">
@@ -74,51 +71,53 @@ export const AppHeader = ({ viewer }: AppHeaderProps) => {
           <span className="hidden sm:inline">Tinder Lite</span>
         </Link>
 
-        <nav
-          aria-label="Primary navigation"
-          className="flex items-center rounded-2xl border border-zinc-200/70 bg-white/70 p-1 shadow-sm"
-        >
-          <HeaderLink
-            href="/feed"
-            icon={
-              <svg
-                aria-hidden="true"
-                viewBox="0 0 24 24"
-                className="size-4"
-                fill="none"
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-              >
-                <path d="M12 21s-7-4.4-7-11a4 4 0 017-2.6A4 4 0 0119 10c0 6.6-7 11-7 11z" />
-              </svg>
-            }
+        {isPersonDetails ? null : (
+          <nav
+            aria-label="Primary navigation"
+            className="flex items-center rounded-2xl border border-zinc-200/70 bg-white/70 p-1 shadow-sm"
           >
-            Discover
-          </HeaderLink>
-          <HeaderLink
-            href="/connections"
-            icon={
-              <svg
-                aria-hidden="true"
-                viewBox="0 0 24 24"
-                className="size-4"
-                fill="none"
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-              >
-                <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" />
-                <circle cx="9" cy="7" r="4" />
-                <path d="M22 21v-2a4 4 0 00-3-3.9M16 3.1a4 4 0 010 7.8" />
-              </svg>
-            }
-          >
-            Connections
-          </HeaderLink>
-        </nav>
+            <HeaderLink
+              href="/feed"
+              icon={
+                <svg
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                  className="size-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                >
+                  <path d="M12 21s-7-4.4-7-11a4 4 0 017-2.6A4 4 0 0119 10c0 6.6-7 11-7 11z" />
+                </svg>
+              }
+            >
+              Discover
+            </HeaderLink>
+            <HeaderLink
+              href="/connections"
+              icon={
+                <svg
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                  className="size-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                >
+                  <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <path d="M22 21v-2a4 4 0 00-3-3.9M16 3.1a4 4 0 010 7.8" />
+                </svg>
+              }
+            >
+              Connections
+            </HeaderLink>
+          </nav>
+        )}
 
         <div className="relative flex shrink-0 items-center gap-2">
           <Link

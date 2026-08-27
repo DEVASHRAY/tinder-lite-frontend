@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
+    qualities: [75, 90],
     remotePatterns: [
       {
         hostname: "images.unsplash.com",
@@ -46,4 +47,8 @@ export default nextConfig;
  *   instead of accepting arbitrary remote hosts.
  * - Next.js 14.1 also used `remotePatterns`; object-based patterns remain the
  *   explicit, least-permissive option in Next.js 16.
+ *
+ * Image qualities
+ * - Next.js 16 only allows quality `75` unless `images.qualities` lists more
+ *   values. Next.js 14.1 accepted any quality from 1 to 100.
  */

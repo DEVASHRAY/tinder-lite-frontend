@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import { LoginForm } from "@/features/auth/login-form";
 
@@ -98,6 +99,15 @@ const LoginPage = () => {
                 defaultEmail={defaultEmail}
                 defaultPassword={defaultPassword}
               />
+              <p className="mt-6 text-center text-sm text-zinc-500">
+                New here?{" "}
+                <Link
+                  href="/signup"
+                  className="font-medium text-zinc-700 underline-offset-4 hover:text-[#e91e63] hover:underline"
+                >
+                  Sign up
+                </Link>
+              </p>
             </div>
           </div>
         </section>

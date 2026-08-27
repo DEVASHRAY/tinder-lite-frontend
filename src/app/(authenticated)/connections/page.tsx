@@ -5,11 +5,12 @@ import type { ReactNode } from "react";
 
 import { ConnectionsConstantsCollection } from "@/features/connections/connections.constants";
 import { loadConnections } from "@/features/connections/connections.data";
+import { ConnectionPortraitCard } from "@/features/connections/connection-portrait-card";
+import { ReviewLikeForm } from "@/features/connections/review-like-form";
 import type {
   ConnectionList,
   ConnectionsLoadResult,
 } from "@/features/connections/connections.types";
-import { ProfileAvatar } from "@/features/profile/profile-avatar";
 
 export const metadata: Metadata = {
   title: "Connections | Tinder Lite",
@@ -93,6 +94,23 @@ const getEmptyState = ({
         message: "When you both choose each other, your matches will appear here.",
         title: "No matches yet",
       };
+  }
+};
+
+interface GetConnectionBadgeInput {
+  connectionType: ConnectionList;
+}
+
+const getConnectionBadge = ({
+  connectionType,
+}: GetConnectionBadgeInput): string => {
+  switch (connectionType) {
+    case ConnectionsConstantsCollection.ConnectionList.Received:
+      return "Liked you";
+    case ConnectionsConstantsCollection.ConnectionList.Sent:
+      return "Sent";
+    default:
+      return "Match";
   }
 };
 
@@ -218,31 +236,32 @@ const ConnectionsPage = async ({
           </ConnectionTab>
         </nav>
 
-        {result.profiles.length ? (
+        {result.connections.length ? (
           <ul
             aria-label="Connection profiles"
             className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
           >
-            {result.profiles.map((profile) => (
-              <li key={profile.id}>
-                <article className="flex items-center gap-4 rounded-[1.75rem] border border-white/80 bg-white/85 p-4 shadow-[0_22px_60px_-38px_rgba(72,24,49,0.55)] backdrop-blur">
-                  <ProfileAvatar
-                    className="size-20 rounded-2xl text-2xl"
-                    name={profile.name}
-                    photoUrl={profile.photoUrl}
-                    sizes="80px"
-                  />
-                  <div className="min-w-0">
-                    <h2 className="truncate text-lg font-semibold tracking-tight">
-                      {profile.name}, {profile.age}
-                    </h2>
-                    <p className="mt-1 text-sm text-zinc-500 capitalize">
-                      {profile.gender}
-                    </p>
-                  </div>
-                </article>
-              </li>
-            ))}
+            {result.connections.map((connection) => {
+              const isReceived =
+                connectionType ===
+                ConnectionsConstantsCollection.ConnectionList.Received;
+
+              return (
+                <ConnectionPortraitCard
+                  key={connection.connectionId}
+                  actions={
+                    isReceived ? (
+                      <ReviewLikeForm
+                        connectionId={connection.connectionId}
+                        personName={connection.profile.name}
+                      />
+                    ) : null
+                  }
+                  badge={getConnectionBadge({ connectionType })}
+                  profile={connection.profile}
+                />
+              );
+            })}
           </ul>
         ) : (
           <div className="mt-10 rounded-[2rem] border border-dashed border-zinc-300 bg-white/65 px-6 py-16 text-center backdrop-blur">
