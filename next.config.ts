@@ -5,24 +5,33 @@ const nextConfig: NextConfig = {
     qualities: [75, 90],
     remotePatterns: [
       {
+        protocol: "https",
         hostname: "images.unsplash.com",
-        pathname: "/photo-**",
-        protocol: "https",
+        port: "",
+        pathname: "/photo-*",
       },
       {
+        protocol: "https",
         hostname: "media.istockphoto.com",
-        pathname: "/id/**",
-        protocol: "https",
+        port: "",
+        pathname:
+          "/id/1223477625/vector/male-default-avatar-profile-icon-man-face-silhouette-person-placeholder-vector-illustration.jpg",
+        search:
+          "?s=170667a&w=0&k=20&c=CrHRmkAACHQyNhv-f3Mj_PpO5WLFJlXcL2QcUlYByP4=",
       },
       {
+        protocol: "https",
         hostname: "cdn.vectorstock.com",
-        pathname: "/i/**",
-        protocol: "https",
+        port: "",
+        pathname:
+          "/i/1000v/14/18/default-female-avatar-profile-picture-icon-grey-vector-34511418.jpg",
+        search: "",
       },
       {
-        hostname: "commons.wikimedia.org",
-        pathname: "/wiki/Special:FilePath/**",
         protocol: "https",
+        hostname: "commons.wikimedia.org",
+        port: "",
+        pathname: "/wiki/Special:FilePath/*",
         search: "?width=800",
       },
     ],
@@ -48,12 +57,17 @@ export default nextConfig;
  *   interception convention was still named `middleware.ts`.
  *
  * Remote image allowlist
- * - Next.js optimizes only the HTTPS image hosts currently returned by Express
- *   seed portraits and gender default avatars instead of accepting arbitrary
- *   remote hosts. Wikimedia seed portraits are restricted to the file endpoint
- *   and the generator's exact width query.
- * - Next.js 14.1 also used `remotePatterns`; object-based patterns remain the
- *   explicit, least-permissive option in Next.js 16.
+ * - Current providers are Unsplash for runtime-normalized profile URLs, iStock
+ *   and VectorStock for Express gender defaults, and Wikimedia Commons
+ *   `Special:FilePath` seed portraits. Fixed URLs and generated seed URLs use
+ *   exact query allowlists. Unsplash remains query-open because the runtime
+ *   preserves source query parameters while replacing its image controls.
+ * - Wikimedia redirects `Special:FilePath` requests to `upload.wikimedia.org`.
+ *   Next.js 16 does not recheck `remotePatterns` after a permitted redirect, so
+ *   the redirect host is not allowed separately when no direct `src` uses it.
+ * - Next.js 14.1 supported protocol, host, port, and path restrictions, but
+ *   exact `remotePatterns.search` matching arrived in 14.2.14. Next.js 16 uses
+ *   exact searches here wherever the current URL format is stable.
  *
  * Image qualities
  * - Next.js 16 only allows quality `75` unless `images.qualities` lists more

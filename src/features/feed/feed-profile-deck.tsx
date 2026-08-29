@@ -27,7 +27,6 @@ interface FeedProfileDeckProps {
 
 interface DragSession {
   hasHorizontalIntent: boolean;
-  hasVerticalIntent: boolean;
   pointerId: number;
   startX: number;
   startY: number;
@@ -161,12 +160,10 @@ export const FeedProfileDeck = ({ profiles }: FeedProfileDeckProps) => {
     queuedOffsetRef.current = 0;
     dragSessionRef.current = {
       hasHorizontalIntent: false,
-      hasVerticalIntent: false,
       pointerId: event.pointerId,
       startX: event.clientX,
       startY: event.clientY,
     };
-    event.currentTarget.setPointerCapture(event.pointerId);
   };
 
   const handlePointerMove = (event: PointerEvent<HTMLElement>) => {
@@ -180,25 +177,25 @@ export const FeedProfileDeck = ({ profiles }: FeedProfileDeckProps) => {
     const verticalOffset = event.clientY - dragSession.startY;
     pointerTravelRef.current = Math.hypot(horizontalOffset, verticalOffset);
 
-    if (
-      !dragSession.hasHorizontalIntent &&
-      !dragSession.hasVerticalIntent
-    ) {
+    if (!dragSession.hasHorizontalIntent) {
       if (pointerTravelRef.current < TAP_MOVE_LIMIT) {
         return;
       }
 
       if (Math.abs(horizontalOffset) <= Math.abs(verticalOffset)) {
-        dragSession.hasVerticalIntent = true;
+        dragSessionRef.current = null;
+        queuedOffsetRef.current = 0;
+        cancelPendingFrame();
         return;
       }
 
       dragSession.hasHorizontalIntent = true;
-      setIsDragging(true);
-    }
 
-    if (!dragSession.hasHorizontalIntent) {
-      return;
+      if (!event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.setPointerCapture(event.pointerId);
+      }
+
+      setIsDragging(true);
     }
 
     queuedOffsetRef.current = horizontalOffset;
@@ -225,8 +222,7 @@ export const FeedProfileDeck = ({ profiles }: FeedProfileDeckProps) => {
     pointerTravelRef.current = Math.hypot(finalOffset, verticalTravel);
     const isHorizontalGesture =
       dragSession.hasHorizontalIntent ||
-      (!dragSession.hasVerticalIntent &&
-        pointerTravelRef.current >= TAP_MOVE_LIMIT &&
+      (pointerTravelRef.current >= TAP_MOVE_LIMIT &&
         Math.abs(finalOffset) > Math.abs(verticalTravel));
 
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
@@ -457,7 +453,7 @@ export const FeedProfileDeck = ({ profiles }: FeedProfileDeckProps) => {
                     isTopCard ? handleCardTransitionEnd : undefined
                   }
                   className={`absolute inset-0 overflow-hidden rounded-[2.25rem] border border-white/80 bg-zinc-900 shadow-[0_38px_100px_-36px_rgba(58,20,41,0.7)] select-none ${
-                    isTopCard ? "touch-none" : ""
+                    isTopCard ? "touch-pan-y" : ""
                   } ${
                     isDragging && isTopCard
                       ? "cursor-grabbing"
@@ -626,11 +622,11 @@ export const FeedProfileDeck = ({ profiles }: FeedProfileDeckProps) => {
  *   coordinated manually inside event handlers.
  *
  * Card tap vs swipe
- * - `touch-action: none` gives the deck ownership of touches that begin on the
- *   card, so vertical drift cannot become document scrolling or iOS rubber-band
- *   bounce. The surrounding route remains scrollable outside the card.
- * - Pointer capture starts on press, while a 10px direction lock keeps taps
- *   separate from horizontal drags and ignores vertical-only motion.
+ * - `touch-action: pan-y` leaves vertical panning native while preventing the
+ *   browser from treating horizontal card gestures as page panning.
+ * - A 10px direction lock separates taps from drags. Pointer capture and card
+ *   transforms start only after horizontal motion wins; vertical motion clears
+ *   deck tracking so iOS Safari or Android Chrome can take over page scrolling.
  * - A `<Link>` wrapping the swipe surface would fight dragging; interactive
  *   descendants are excluded if controls are added to a card later.
  * - Next.js 16 still recommends `<Link>` for ordinary navigation; this is the
