@@ -1,9 +1,16 @@
 import { requestBackend } from "@/lib/server/backend-client";
+import { logger } from "@/lib/server/logger";
 
 const proxyRequest = async (request: Request): Promise<Response> => {
+  const requestUrl = new URL(request.url);
+  const path = `${requestUrl.pathname}${requestUrl.search}`;
+
+  logger.info({
+    message: "Browser → Next BFF",
+    detail: `${request.method} ${path}`,
+  });
+
   try {
-    const requestUrl = new URL(request.url);
-    const path = `${requestUrl.pathname}${requestUrl.search}`;
     const canHaveBody = request.method !== "GET" && request.method !== "HEAD";
     const body = canHaveBody ? await request.text() : undefined;
 
@@ -16,6 +23,19 @@ const proxyRequest = async (request: Request): Promise<Response> => {
       signal: request.signal,
     });
   } catch (error) {
+    if (error instanceof Error) {
+      logger.fail({
+        message: "BFF could not forward to Express",
+        detail: `${request.method} ${path}`,
+        error,
+      });
+    } else {
+      logger.fail({
+        message: "BFF could not forward to Express",
+        detail: `${request.method} ${path}`,
+      });
+    }
+
     const message =
       process.env.NODE_ENV === "development" && error instanceof Error
         ? error.message

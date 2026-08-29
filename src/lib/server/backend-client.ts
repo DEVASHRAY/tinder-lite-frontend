@@ -1,5 +1,7 @@
 import "server-only";
 
+import { logger } from "@/lib/server/logger";
+
 interface BackendRequestInput {
   body?: string;
   contentType?: string;
@@ -9,14 +11,46 @@ interface BackendRequestInput {
   signal?: AbortSignal;
 }
 
+interface DescribeRequestInput {
+  cookiePresent: boolean;
+  method: string;
+  url: URL;
+}
+
+interface DescribeResponseInput extends DescribeRequestInput {
+  status: number;
+}
+
 const getBackendOrigin = (): string => {
   const backendOrigin = process.env["TINDER_API_ORIGIN"];
 
   if (!backendOrigin) {
+    logger.fail({
+      message: "TINDER_API_ORIGIN is missing",
+      detail:
+        "Set TINDER_API_ORIGIN=http://127.0.0.1:4000 on the Next.js process, then restart it.",
+    });
     throw new Error("TINDER_API_ORIGIN is required");
   }
 
   return backendOrigin;
+};
+
+const describeRequest = ({
+  method,
+  url,
+  cookiePresent,
+}: DescribeRequestInput): string => {
+  return `${method} ${url.toString()} cookie=${cookiePresent ? "yes" : "no"}`;
+};
+
+const describeResponse = ({
+  method,
+  url,
+  cookiePresent,
+  status,
+}: DescribeResponseInput): string => {
+  return `${describeRequest({ method, url, cookiePresent })} → ${String(status)}`;
 };
 
 export const requestBackend = async ({
@@ -27,6 +61,15 @@ export const requestBackend = async ({
   cookie,
   signal,
 }: BackendRequestInput): Promise<Response> => {
+  const url = new URL(path, getBackendOrigin());
+  const cookiePresent = Boolean(cookie);
+  const requestDetail = describeRequest({ method, url, cookiePresent });
+
+  logger.info({
+    message: "Next → Express",
+    detail: requestDetail,
+  });
+
   const headers = new Headers();
 
   if (contentType) {
@@ -40,18 +83,49 @@ export const requestBackend = async ({
   }
 
   try {
-    return await fetch(new URL(path, getBackendOrigin()), {
+    const response = await fetch(url, {
       method,
       body,
       headers,
       cache: "no-store",
       signal,
     });
+
+    const responseDetail = describeResponse({
+      method,
+      url,
+      cookiePresent,
+      status: response.status,
+    });
+
+    if (!response.ok) {
+      logger.warn({
+        message: "Express returned an error status",
+        detail: responseDetail,
+      });
+      return response;
+    }
+
+    logger.success({
+      message: "Express responded",
+      detail: responseDetail,
+    });
+
+    return response;
   } catch (error) {
     if (error instanceof Error) {
+      logger.fail({
+        message: "Next could not reach Express",
+        detail: requestDetail,
+        error,
+      });
       throw error;
     }
 
+    logger.fail({
+      message: "Next could not reach Express",
+      detail: requestDetail,
+    });
     throw new Error("Backend request failed");
   }
 };
