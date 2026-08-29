@@ -19,6 +19,12 @@ const nextConfig: NextConfig = {
         pathname: "/i/**",
         protocol: "https",
       },
+      {
+        hostname: "commons.wikimedia.org",
+        pathname: "/wiki/Special:FilePath/**",
+        protocol: "https",
+        search: "?width=800",
+      },
     ],
   },
   redirects: async () => [
@@ -43,8 +49,9 @@ export default nextConfig;
  *
  * Remote image allowlist
  * - Next.js optimizes only the HTTPS image hosts currently returned by Express
- *   seed portraits (`images.unsplash.com/photo-*`) and gender default avatars
- *   instead of accepting arbitrary remote hosts.
+ *   seed portraits and gender default avatars instead of accepting arbitrary
+ *   remote hosts. Wikimedia seed portraits are restricted to the file endpoint
+ *   and the generator's exact width query.
  * - Next.js 14.1 also used `remotePatterns`; object-based patterns remain the
  *   explicit, least-permissive option in Next.js 16.
  *
