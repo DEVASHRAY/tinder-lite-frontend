@@ -2,7 +2,15 @@
 
 import { useFormStatus } from "react-dom";
 
-export const LoginSubmitButton = () => {
+interface LoginSubmitButtonProps {
+  idleLabel: string;
+  pendingLabel: string;
+}
+
+export const LoginSubmitButton = ({
+  idleLabel,
+  pendingLabel,
+}: LoginSubmitButtonProps) => {
   const { pending } = useFormStatus();
 
   return (
@@ -17,11 +25,11 @@ export const LoginSubmitButton = () => {
             aria-hidden="true"
             className="mr-2 size-4 animate-spin rounded-full border-2 border-white/40 border-t-white"
           />
-          Logging in…
+          {pendingLabel}
         </>
       ) : (
         <>
-          Continue
+          {idleLabel}
           <span
             aria-hidden="true"
             className="ml-2 transition-transform duration-200 group-hover:translate-x-1"

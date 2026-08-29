@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { useActionState, useOptimistic, useState, type FormEvent } from "react";
+import { useActionState, useState, type FormEvent } from "react";
 
 import { AuthConstantsCollection } from "@/features/auth/auth.constants";
 import { SignupChoice } from "@/features/auth/signup-choice";
+import { SignupConstantsCollection } from "@/features/auth/signup.constants";
 import {
   initialSignupActionState,
   signupAction,
@@ -21,6 +22,9 @@ type UserInterest =
 
 type SignupStep =
   (typeof AuthConstantsCollection.SignupStep)[keyof typeof AuthConstantsCollection.SignupStep];
+
+type SignupMode =
+  (typeof SignupConstantsCollection.SignupMode)[keyof typeof SignupConstantsCollection.SignupMode];
 
 interface SignupDraft {
   age: number;
@@ -63,6 +67,24 @@ interface SignupPreviewCardProps {
   preview: SignupCardPreview;
 }
 
+interface SignupMessageProps {
+  isError: boolean;
+  message: string;
+}
+
+interface SignupModeSwitchProps {
+  disabled: boolean;
+  label: string;
+  onSwitch: () => void;
+  prompt: string;
+}
+
+interface SignupHiddenProfileFieldsProps {
+  draft: SignupDraft;
+  mode: SignupMode;
+  session: number;
+}
+
 interface ToggleInterestInput {
   interest: UserInterest;
 }
@@ -71,7 +93,7 @@ const HUGE_INPUT_CLASS_NAME =
   "w-full bg-transparent text-4xl font-semibold tracking-[-0.05em] text-white outline-none placeholder:text-white/25 sm:text-6xl";
 
 const FIELD_INPUT_CLASS_NAME =
-  "min-h-14 w-full rounded-2xl border border-white/15 bg-white/8 px-4 text-lg text-white outline-none placeholder:text-white/35 focus:border-white/50";
+  "min-h-14 w-full rounded-2xl border border-white/15 bg-white/8 px-4 text-lg text-white outline-none transition placeholder:text-white/35 hover:border-white/30 focus:border-zinc-400 focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-solid focus-visible:outline-zinc-300 aria-invalid:border-rose-300 aria-invalid:focus:border-zinc-400 disabled:cursor-wait disabled:opacity-65";
 
 const GENDER_LABEL = {
   [ProfileConstantsCollection.UserGender.Female]: "Woman",
@@ -147,6 +169,77 @@ const SignupPreviewCard = ({ preview }: SignupPreviewCardProps) => {
   );
 };
 
+const SignupMessage = ({ isError, message }: SignupMessageProps) => {
+  return (
+    <p
+      id="signup-message"
+      role={isError ? "alert" : "status"}
+      className={
+        isError
+          ? "mt-6 rounded-xl border border-rose-300/30 bg-rose-300/10 px-4 py-3 text-sm font-medium text-rose-100"
+          : "mt-6 rounded-xl border border-emerald-300/30 bg-emerald-300/10 px-4 py-3 text-sm font-medium text-emerald-100"
+      }
+    >
+      {message}
+    </p>
+  );
+};
+
+const SignupModeSwitch = ({
+  disabled,
+  label,
+  onSwitch,
+  prompt,
+}: SignupModeSwitchProps) => {
+  return (
+    <p className="text-center text-sm text-white/55">
+      {prompt}{" "}
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={onSwitch}
+        className="font-semibold text-white/80 underline-offset-4 hover:text-white hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/50 disabled:cursor-wait disabled:opacity-60"
+      >
+        {label}
+      </button>
+    </p>
+  );
+};
+
+const SignupHiddenProfileFields = ({
+  draft,
+  mode,
+  session,
+}: SignupHiddenProfileFieldsProps) => {
+  return (
+    <>
+      <input name="signupMode" type="hidden" value={mode} />
+      <input name="signupSession" type="hidden" value={session} />
+      <input name="name" type="hidden" value={draft.name.trim()} />
+      <input name="age" type="hidden" value={draft.age} />
+      <input name="gender" type="hidden" value={draft.gender} />
+      <input name="bio" type="hidden" value={draft.bio.trim()} />
+      <input name="jobTitle" type="hidden" value={draft.jobTitle.trim()} />
+      <input name="city" type="hidden" value={draft.city.trim()} />
+      <input name="weekdayPace" type="hidden" value={draft.weekdayPace} />
+      <input name="socialBattery" type="hidden" value={draft.socialBattery} />
+      <input
+        name="movieNightStyle"
+        type="hidden"
+        value={draft.movieNightStyle}
+      />
+      {draft.interestedIn.map((interest) => (
+        <input
+          key={interest}
+          name="interestedIn"
+          type="hidden"
+          value={interest}
+        />
+      ))}
+    </>
+  );
+};
+
 const getStepHint = ({ draft, step }: GetStepHintInput): string => {
   if (step === AuthConstantsCollection.SignupStep.Name && draft.name.trim().length < 2) {
     return "Give us at least two letters.";
@@ -191,47 +284,12 @@ export const SignupFlow = () => {
   );
   const [draft, setDraft] = useState<SignupDraft>(emptyDraft);
   const [hint, setHint] = useState("");
-  const [preview, showPreview] = useOptimistic(
-    {
-      age: draft.age,
-      bio: draft.bio,
-      city: draft.city,
-      jobTitle: draft.jobTitle,
-      joining: false,
-      name: draft.name,
-    },
-    (_current, nextPreview: SignupCardPreview) => nextPreview,
+  const [mode, setMode] = useState<SignupMode>(
+    SignupConstantsCollection.SignupMode.Otp,
   );
-  const [state, formAction] = useActionState(
-    async (
-      previousState: typeof initialSignupActionState,
-      formData: FormData,
-    ) => {
-      showPreview({
-        age: draft.age,
-        bio: draft.bio,
-        city: draft.city,
-        jobTitle: draft.jobTitle,
-        joining: true,
-        name: draft.name,
-      });
-      formData.set("name", draft.name.trim());
-      formData.set("age", String(draft.age));
-      formData.set("gender", draft.gender);
-      formData.set("bio", draft.bio.trim());
-      formData.set("jobTitle", draft.jobTitle.trim());
-      formData.set("city", draft.city.trim());
-      formData.set("weekdayPace", draft.weekdayPace);
-      formData.set("socialBattery", draft.socialBattery);
-      formData.set("movieNightStyle", draft.movieNightStyle);
-      formData.delete("interestedIn");
-
-      for (const gender of draft.interestedIn) {
-        formData.append("interestedIn", gender);
-      }
-
-      return signupAction(previousState, formData);
-    },
+  const [signupSession, setSignupSession] = useState(0);
+  const [state, formAction, pending] = useActionState(
+    signupAction,
     initialSignupActionState,
   );
 
@@ -242,6 +300,30 @@ export const SignupFlow = () => {
   const stepIndex = getStepIndex({ step });
   const isAccountStep =
     step === AuthConstantsCollection.SignupStep.Account;
+  const isCurrentActionState =
+    state.mode === mode && state.session === signupSession;
+  const isOtpCodeStep =
+    isAccountStep &&
+    mode === SignupConstantsCollection.SignupMode.Otp &&
+    isCurrentActionState &&
+    state.step === SignupConstantsCollection.OtpSignupStep.Code;
+  const isPending = isAccountStep && pending;
+  const visibleActionMessage =
+    isCurrentActionState &&
+    (isOtpCodeStep || state.email === draft.email.trim())
+      ? state.message
+      : "";
+  const preview: SignupCardPreview = {
+    age: draft.age,
+    bio: draft.bio,
+    city: draft.city,
+    jobTitle: draft.jobTitle,
+    joining:
+      isPending &&
+      (isOtpCodeStep ||
+        mode === SignupConstantsCollection.SignupMode.Password),
+    name: draft.name,
+  };
 
   const goNext = () => {
     const nextHint = getStepHint({ draft, step });
@@ -257,7 +339,32 @@ export const SignupFlow = () => {
 
   const goBack = () => {
     setHint("");
+
+    if (isAccountStep) {
+      setSignupSession((currentSession) => currentSession + 1);
+    }
+
     setStep(getPreviousStep({ step }));
+  };
+
+  const showOtpSignup = () => {
+    setHint("");
+    setMode(SignupConstantsCollection.SignupMode.Otp);
+    setSignupSession((currentSession) => currentSession + 1);
+  };
+
+  const showPasswordSignup = () => {
+    setHint("");
+    setMode(SignupConstantsCollection.SignupMode.Password);
+    setSignupSession((currentSession) => currentSession + 1);
+  };
+
+  const changeOtpEmail = () => {
+    setDraft((current) => ({
+      ...current,
+      email: state.email,
+    }));
+    setSignupSession((currentSession) => currentSession + 1);
   };
 
   const handleSignupSubmit = ({ event }: HandleSignupSubmitInput) => {
@@ -290,9 +397,15 @@ export const SignupFlow = () => {
   return (
     <form
       action={formAction}
+      aria-busy={isPending}
       onSubmit={(event) => handleSignupSubmit({ event })}
       className="relative flex min-h-svh flex-col overflow-hidden bg-zinc-950 text-white"
     >
+      <SignupHiddenProfileFields
+        draft={draft}
+        mode={mode}
+        session={signupSession}
+      />
       <div
         aria-hidden="true"
         className="absolute -top-32 left-[-8rem] size-[28rem] rounded-full bg-[#fd267a]/30 blur-3xl"
@@ -313,8 +426,9 @@ export const SignupFlow = () => {
         ) : (
           <button
             type="button"
+            disabled={isPending}
             onClick={goBack}
-            className="text-sm font-semibold text-white/70"
+            className="rounded-sm text-sm font-semibold text-white/70 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/50 disabled:cursor-wait disabled:opacity-50"
           >
             Back
           </button>
@@ -365,6 +479,7 @@ export const SignupFlow = () => {
               What should people call you?
             </h1>
             <input
+              aria-label="Name"
               autoFocus
               value={draft.name}
               maxLength={ProfileConstantsCollection.FieldLimit.Name}
@@ -404,6 +519,7 @@ export const SignupFlow = () => {
               ))}
             </div>
             <input
+              aria-label="Age"
               type="number"
               min={18}
               value={draft.age > 0 ? draft.age : ""}
@@ -471,6 +587,7 @@ export const SignupFlow = () => {
               Where should someone find you?
             </h1>
             <input
+              aria-label="City"
               autoFocus
               value={draft.city}
               maxLength={ProfileConstantsCollection.FieldLimit.City}
@@ -484,6 +601,7 @@ export const SignupFlow = () => {
               className={`${HUGE_INPUT_CLASS_NAME} mt-10`}
             />
             <input
+              aria-label="Job title"
               value={draft.jobTitle}
               maxLength={ProfileConstantsCollection.FieldLimit.JobTitle}
               onChange={(event) =>
@@ -574,6 +692,7 @@ export const SignupFlow = () => {
               One sentence they&apos;ll actually read.
             </h1>
             <textarea
+              aria-label="Bio"
               autoFocus
               value={draft.bio}
               maxLength={140}
@@ -594,67 +713,224 @@ export const SignupFlow = () => {
         {step === AuthConstantsCollection.SignupStep.Account ? (
           <div>
             <p className="text-sm font-bold tracking-[0.18em] text-[#ff8fb0] uppercase">
-              Lock it in
+              {isOtpCodeStep ? "Check your inbox" : "Lock it in"}
             </p>
             <h1 className="mt-3 text-4xl font-semibold tracking-[-0.05em] sm:text-5xl">
-              Last door. Then you&apos;re in.
+              {isOtpCodeStep
+                ? "Six digits. Then you're in."
+                : mode === SignupConstantsCollection.SignupMode.Otp
+                  ? "No password needed."
+                  : "Create a password."}
             </h1>
-            <div className="mt-10 space-y-4">
-              <input
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={draft.email}
-                onChange={(event) =>
-                  setDraft((current) => ({
-                    ...current,
-                    email: event.target.value,
-                  }))
-                }
-                placeholder="Email"
-                className={FIELD_INPUT_CLASS_NAME}
-              />
-              <input
-                name="password"
-                type="password"
-                autoComplete="new-password"
-                required
-                maxLength={32}
-                value={draft.password}
-                onChange={(event) =>
-                  setDraft((current) => ({
-                    ...current,
-                    password: event.target.value,
-                  }))
-                }
-                placeholder="Password"
-                className={FIELD_INPUT_CLASS_NAME}
-              />
-              <p className="text-xs leading-5 text-white/50">
-                8+ characters. Mix upper, lower, a number, and a symbol. We
-                know. We don&apos;t make the password rules.
-              </p>
-            </div>
+            <fieldset disabled={isPending} className="mt-10 space-y-4">
+              {mode === SignupConstantsCollection.SignupMode.Otp ? (
+                isOtpCodeStep ? (
+                  <>
+                    <input name="email" type="hidden" value={state.email} />
+                    <p
+                      id="signup-otp-destination"
+                      className="text-sm leading-6 text-white/65"
+                    >
+                      We sent a 6-digit code to{" "}
+                      <strong className="font-semibold text-white/90">
+                        {state.email}
+                      </strong>
+                      {"."}
+                    </p>
+                    <div className="space-y-2">
+                      <label
+                        htmlFor="signup-otp"
+                        className="block text-sm font-semibold text-white/85"
+                      >
+                        Verification code
+                      </label>
+                      <input
+                        id="signup-otp"
+                        name="otp"
+                        type="text"
+                        autoComplete="one-time-code"
+                        autoFocus
+                        inputMode="numeric"
+                        maxLength={6}
+                        minLength={6}
+                        pattern="[0-9]{6}"
+                        placeholder="000000"
+                        required
+                        aria-describedby="signup-otp-destination signup-message"
+                        aria-invalid={state.isError}
+                        className={`${FIELD_INPUT_CLASS_NAME} text-center text-xl tracking-[0.4em]`}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={changeOtpEmail}
+                      className="min-h-10 w-full rounded-xl text-sm font-semibold text-white/65 underline-offset-4 hover:text-white hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/50 disabled:cursor-wait disabled:opacity-60"
+                    >
+                      Change email
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div className="space-y-2">
+                      <label
+                        htmlFor="signup-otp-email"
+                        className="block text-sm font-semibold text-white/85"
+                      >
+                        Email
+                      </label>
+                      <input
+                        id="signup-otp-email"
+                        name="email"
+                        type="email"
+                        autoComplete="email"
+                        inputMode="email"
+                        maxLength={254}
+                        required
+                        value={draft.email}
+                        onChange={(event) =>
+                          setDraft((current) => ({
+                            ...current,
+                            email: event.target.value,
+                          }))
+                        }
+                        placeholder="you@example.com"
+                        aria-describedby={
+                          visibleActionMessage ? "signup-message" : undefined
+                        }
+                        aria-invalid={Boolean(visibleActionMessage)}
+                        className={FIELD_INPUT_CLASS_NAME}
+                      />
+                    </div>
+                    <p className="text-xs leading-5 text-white/50">
+                      We&apos;ll email you one 6-digit code to create and secure
+                      your account.
+                    </p>
+                  </>
+                )
+              ) : (
+                <>
+                  <div className="space-y-2">
+                    <label
+                      htmlFor="signup-password-email"
+                      className="block text-sm font-semibold text-white/85"
+                    >
+                      Email
+                    </label>
+                    <input
+                      id="signup-password-email"
+                      name="email"
+                      type="email"
+                      autoComplete="email"
+                      inputMode="email"
+                      maxLength={254}
+                      required
+                      value={draft.email}
+                      onChange={(event) =>
+                        setDraft((current) => ({
+                          ...current,
+                          email: event.target.value,
+                        }))
+                      }
+                      placeholder="you@example.com"
+                      aria-describedby={
+                        visibleActionMessage ? "signup-message" : undefined
+                      }
+                      aria-invalid={Boolean(visibleActionMessage)}
+                      className={FIELD_INPUT_CLASS_NAME}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label
+                      htmlFor="signup-password"
+                      className="block text-sm font-semibold text-white/85"
+                    >
+                      Password
+                    </label>
+                    <input
+                      id="signup-password"
+                      name="password"
+                      type="password"
+                      autoComplete="new-password"
+                      maxLength={32}
+                      minLength={8}
+                      required
+                      value={draft.password}
+                      onChange={(event) =>
+                        setDraft((current) => ({
+                          ...current,
+                          password: event.target.value,
+                        }))
+                      }
+                      placeholder="Create a password"
+                      aria-describedby={
+                        visibleActionMessage
+                          ? "signup-password-help signup-message"
+                          : "signup-password-help"
+                      }
+                      aria-invalid={Boolean(visibleActionMessage)}
+                      className={FIELD_INPUT_CLASS_NAME}
+                    />
+                  </div>
+                  <p
+                    id="signup-password-help"
+                    className="text-xs leading-5 text-white/50"
+                  >
+                    8–32 characters with upper, lower, a number, and a symbol.
+                  </p>
+                </>
+              )}
+            </fieldset>
             <SignupPreviewCard preview={preview} />
           </div>
         ) : null}
 
-        {hint || state.message ? (
-          <p
-            role="alert"
-            className="mt-6 text-sm font-medium text-[#ffb3c7]"
-          >
-            {state.message || hint}
-          </p>
+        {hint ? (
+          <SignupMessage isError message={hint} />
+        ) : visibleActionMessage ? (
+          <SignupMessage
+            isError={state.isError}
+            message={visibleActionMessage}
+          />
         ) : null}
 
         <div className="mt-12 max-w-md">
           {isAccountStep ? (
-            <SignupSubmitButton
-              idleLabel="I'm in"
-              pendingLabel="Creating you…"
-            />
+            <div className="space-y-5">
+              <SignupSubmitButton
+                idleLabel={
+                  mode === SignupConstantsCollection.SignupMode.Password
+                    ? "Create account with password"
+                    : isOtpCodeStep
+                      ? "Verify and join"
+                      : "Email me a code"
+                }
+                pendingLabel={
+                  mode === SignupConstantsCollection.SignupMode.Password
+                    ? "Creating your account…"
+                    : isOtpCodeStep
+                      ? "Verifying…"
+                      : "Sending code…"
+                }
+              />
+              <SignupModeSwitch
+                disabled={isPending}
+                label={
+                  mode === SignupConstantsCollection.SignupMode.Otp
+                    ? "Use password instead"
+                    : "Email me a code"
+                }
+                onSwitch={
+                  mode === SignupConstantsCollection.SignupMode.Otp
+                    ? showPasswordSignup
+                    : showOtpSignup
+                }
+                prompt={
+                  mode === SignupConstantsCollection.SignupMode.Otp
+                    ? "Prefer a password?"
+                    : "Want the faster option?"
+                }
+              />
+            </div>
           ) : (
             <button
               type="button"
@@ -679,14 +955,16 @@ export const SignupFlow = () => {
 /*
  * Learning notes
  *
- * React 19 Action and `useOptimistic`
- * - Earlier steps stay local. The last step submits a form Action so React
- *   owns pending state and the Express signup cookie.
- * - `useOptimistic` flips the live card to a joining state the moment submit
- *   starts. A failed signup restores the previous card when the Action ends.
+ * React 19 Action and `useActionState`
+ * - Earlier profile steps stay local. The account step submits one Action for
+ *   OTP send, OTP verification, or the existing password signup.
+ * - The Action's returned step and pending state drive the verification UI
+ *   without an Effect or a separate request-state bridge.
+ * - A local session number hides results from an abandoned email or mode while
+ *   preserving the profile draft.
  *
  * React 18.2 comparison
- * - React 18 usually kept one `onSubmit` handler and a pending boolean for
- *   the whole wizard, including steps that never hit the network.
- * - A live preview was extra local state that had to be rolled back in `catch`.
+ * - React 18 usually used `onSubmit`, `preventDefault`, and separate local
+ *   state for pending, request errors, and the OTP step.
+ * - React 19 keeps the async mutation state tied to the form submission.
  */

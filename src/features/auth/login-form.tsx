@@ -1,24 +1,241 @@
 "use client";
 
 import { redirect } from "next/navigation";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
+import { AuthConstantsCollection } from "@/features/auth/auth.constants";
 import {
   initialLoginActionState,
   loginAction,
+  otpLoginAction,
+  type OtpLoginActionState,
 } from "@/features/auth/login.action";
 import { LoginSubmitButton } from "@/features/auth/login-submit-button";
+
+type LoginMode =
+  (typeof AuthConstantsCollection.LoginMode)[keyof typeof AuthConstantsCollection.LoginMode];
 
 interface LoginFormProps {
   defaultEmail?: string;
   defaultPassword?: string;
 }
 
-export const LoginForm = ({
-  defaultEmail,
+interface ChangeEmailInput {
+  email: string;
+}
+
+interface LoginMessageProps {
+  isError: boolean;
+  message: string;
+}
+
+interface LoginModeSwitchProps {
+  disabled: boolean;
+  label: string;
+  onSwitch: () => void;
+  prompt: string;
+}
+
+interface OtpLoginFormProps {
+  email: string;
+  onChangeEmail: (input: ChangeEmailInput) => void;
+  onEmailInput: (input: ChangeEmailInput) => void;
+  onSwitchMode: () => void;
+}
+
+interface PasswordLoginFormProps {
+  defaultPassword?: string;
+  email: string;
+  onEmailInput: (input: ChangeEmailInput) => void;
+  onSwitchMode: () => void;
+}
+
+const INPUT_CLASS_NAME =
+  "min-h-12 w-full rounded-2xl border border-zinc-200 bg-zinc-50/80 px-4 py-3 text-base text-zinc-950 outline-none transition placeholder:text-zinc-400 hover:border-zinc-300 focus:border-zinc-400 focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-solid focus-visible:outline-zinc-400 aria-invalid:border-rose-500 aria-invalid:focus:border-rose-500 disabled:cursor-wait disabled:opacity-70";
+
+const LoginMessage = ({ isError, message }: LoginMessageProps) => {
+  return (
+    <p
+      id="login-message"
+      role={isError ? "alert" : "status"}
+      className={
+        isError
+          ? "rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800"
+          : "rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"
+      }
+    >
+      {message}
+    </p>
+  );
+};
+
+const LoginModeSwitch = ({
+  disabled,
+  label,
+  onSwitch,
+  prompt,
+}: LoginModeSwitchProps) => {
+  return (
+    <p className="text-center text-sm text-zinc-500">
+      {prompt}{" "}
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={onSwitch}
+        className="font-semibold text-zinc-700 underline-offset-4 hover:text-[#e91e63] hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fd267a]/30 disabled:cursor-wait disabled:opacity-60"
+      >
+        {label}
+      </button>
+    </p>
+  );
+};
+
+const OtpLoginForm = ({
+  email,
+  onChangeEmail,
+  onEmailInput,
+  onSwitchMode,
+}: OtpLoginFormProps) => {
+  const initialOtpLoginActionState: OtpLoginActionState = {
+    email,
+    isError: false,
+    message: "",
+    step: AuthConstantsCollection.OtpLoginStep.Email,
+    success: false,
+  };
+  const [state, formAction, pending] = useActionState(
+    otpLoginAction,
+    initialOtpLoginActionState,
+  );
+
+  if (state.success) {
+    redirect("/feed");
+  }
+
+  const isCodeStep =
+    state.step === AuthConstantsCollection.OtpLoginStep.Code;
+  const visibleEmailMessage =
+    state.email === email.trim() ? state.message : "";
+
+  return (
+    <form
+      action={formAction}
+      aria-busy={pending}
+      className="mt-8 space-y-5"
+    >
+      {isCodeStep ? (
+        <>
+          <input name="email" type="hidden" value={state.email} />
+          <div className="space-y-2">
+            <p id="otp-destination" className="text-sm leading-6 text-zinc-600">
+              We sent a 6-digit code to{" "}
+              <strong className="font-semibold text-zinc-800">
+                {state.email}
+              </strong>
+              {"."}
+            </p>
+            <label
+              htmlFor="otp"
+              className="block text-sm font-semibold text-zinc-800"
+            >
+              Verification code
+            </label>
+            <input
+              id="otp"
+              name="otp"
+              type="text"
+              autoComplete="one-time-code"
+              autoFocus
+              disabled={pending}
+              inputMode="numeric"
+              maxLength={6}
+              minLength={6}
+              pattern="[0-9]{6}"
+              placeholder="000000"
+              required
+              aria-describedby="otp-destination login-message"
+              aria-invalid={state.isError}
+              className={`${INPUT_CLASS_NAME} text-center text-xl tracking-[0.4em]`}
+            />
+          </div>
+
+          {state.message ? (
+            <LoginMessage isError={state.isError} message={state.message} />
+          ) : null}
+
+          <LoginSubmitButton
+            idleLabel="Verify and log in"
+            pendingLabel="Verifying…"
+          />
+
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => onChangeEmail({ email: state.email })}
+            className="min-h-10 w-full rounded-xl text-sm font-semibold text-zinc-600 underline-offset-4 hover:text-[#e91e63] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fd267a]/30 disabled:cursor-wait disabled:opacity-60"
+          >
+            Change email
+          </button>
+        </>
+      ) : (
+        <>
+          <div className="space-y-2">
+            <label
+              htmlFor="otp-email"
+              className="block text-sm font-semibold text-zinc-800"
+            >
+              Email
+            </label>
+            <input
+              id="otp-email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              disabled={pending}
+              value={email}
+              onChange={(event) =>
+                onEmailInput({ email: event.currentTarget.value })
+              }
+              inputMode="email"
+              maxLength={254}
+              placeholder="you@example.com"
+              required
+              aria-describedby={
+                visibleEmailMessage ? "login-message" : undefined
+              }
+              aria-invalid={Boolean(visibleEmailMessage)}
+              className={INPUT_CLASS_NAME}
+            />
+          </div>
+
+          {visibleEmailMessage ? (
+            <LoginMessage isError message={visibleEmailMessage} />
+          ) : null}
+
+          <LoginSubmitButton
+            idleLabel="Email me a code"
+            pendingLabel="Sending code…"
+          />
+        </>
+      )}
+
+      <LoginModeSwitch
+        disabled={pending}
+        label="Use password instead"
+        onSwitch={onSwitchMode}
+        prompt="Prefer your password?"
+      />
+    </form>
+  );
+};
+
+const PasswordLoginForm = ({
   defaultPassword,
-}: LoginFormProps) => {
-  const [state, formAction] = useActionState(
+  email,
+  onEmailInput,
+  onSwitchMode,
+}: PasswordLoginFormProps) => {
+  const [state, formAction, pending] = useActionState(
     loginAction,
     initialLoginActionState,
   );
@@ -28,7 +245,11 @@ export const LoginForm = ({
   }
 
   return (
-    <form action={formAction} className="mt-8 space-y-5">
+    <form
+      action={formAction}
+      aria-busy={pending}
+      className="mt-8 space-y-5"
+    >
       <div className="space-y-2">
         <label
           htmlFor="email"
@@ -41,12 +262,18 @@ export const LoginForm = ({
           name="email"
           type="email"
           autoComplete="email"
-          defaultValue={defaultEmail}
+          disabled={pending}
+          value={email}
+          onChange={(event) =>
+            onEmailInput({ email: event.currentTarget.value })
+          }
           inputMode="email"
           maxLength={254}
           placeholder="you@example.com"
           required
-          className="min-h-12 w-full rounded-2xl border border-zinc-200 bg-zinc-50/80 px-4 py-3 text-base text-zinc-950 outline-none transition placeholder:text-zinc-400 hover:border-zinc-300 focus:border-[#fd267a] focus:bg-white focus:ring-4 focus:ring-[#fd267a]/10"
+          aria-describedby={state.message ? "login-message" : undefined}
+          aria-invalid={Boolean(state.message)}
+          className={INPUT_CLASS_NAME}
         />
       </div>
 
@@ -63,29 +290,81 @@ export const LoginForm = ({
           type="password"
           autoComplete="current-password"
           defaultValue={defaultPassword}
+          disabled={pending}
           maxLength={32}
           placeholder="Enter your password"
           required
-          className="min-h-12 w-full rounded-2xl border border-zinc-200 bg-zinc-50/80 px-4 py-3 text-base text-zinc-950 outline-none transition placeholder:text-zinc-400 hover:border-zinc-300 focus:border-[#fd267a] focus:bg-white focus:ring-4 focus:ring-[#fd267a]/10"
+          aria-describedby={state.message ? "login-message" : undefined}
+          aria-invalid={Boolean(state.message)}
+          className={INPUT_CLASS_NAME}
         />
       </div>
 
       {state.message ? (
-        <p
-          id="login-message"
-          role={state.success ? "status" : "alert"}
-          className={
-            state.success
-              ? "rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"
-              : "rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800"
-          }
-        >
-          {state.message}
-        </p>
+        <LoginMessage isError={!state.success} message={state.message} />
       ) : null}
 
-      <LoginSubmitButton />
+      <LoginSubmitButton
+        idleLabel="Log in with password"
+        pendingLabel="Logging in…"
+      />
+
+      <LoginModeSwitch
+        disabled={pending}
+        label="Email me a code"
+        onSwitch={onSwitchMode}
+        prompt="Forgot your password?"
+      />
     </form>
+  );
+};
+
+export const LoginForm = ({
+  defaultEmail,
+  defaultPassword,
+}: LoginFormProps) => {
+  const [mode, setMode] = useState<LoginMode>(
+    AuthConstantsCollection.LoginMode.Otp,
+  );
+  const [email, setEmail] = useState(defaultEmail || "");
+  const [otpFormVersion, setOtpFormVersion] = useState(0);
+
+  const updateEmail = ({ email: nextEmail }: ChangeEmailInput) => {
+    setEmail(nextEmail);
+  };
+
+  const changeEmail = ({ email: nextEmail }: ChangeEmailInput) => {
+    setEmail(nextEmail);
+    setOtpFormVersion((currentVersion) => currentVersion + 1);
+  };
+
+  const showOtpLogin = () => {
+    setMode(AuthConstantsCollection.LoginMode.Otp);
+  };
+
+  const showPasswordLogin = () => {
+    setMode(AuthConstantsCollection.LoginMode.Password);
+  };
+
+  if (mode === AuthConstantsCollection.LoginMode.Password) {
+    return (
+      <PasswordLoginForm
+        defaultPassword={defaultPassword}
+        email={email}
+        onEmailInput={updateEmail}
+        onSwitchMode={showOtpLogin}
+      />
+    );
+  }
+
+  return (
+    <OtpLoginForm
+      key={otpFormVersion}
+      email={email}
+      onChangeEmail={changeEmail}
+      onEmailInput={updateEmail}
+      onSwitchMode={showPasswordLogin}
+    />
   );
 };
 
@@ -93,14 +372,15 @@ export const LoginForm = ({
  * Learning notes
  *
  * React 19 `useActionState`
- * - The hook connects the form Action to its latest result and pending state.
- * - React passes `formAction` to the form and schedules the Action submission.
- * - A successful Action triggers Next.js's render-time Client Component
- *   redirect without adding an Effect solely for navigation.
+ * - Each login mode connects its form Action to the latest result and pending
+ *   state. Remounting a mode intentionally discards errors from the old flow.
+ * - The OTP Action returns the next form step, so sending and verifying stay in
+ *   React's submission lifecycle without an Effect-driven state bridge.
+ * - A successful Action triggers a render-time Client Component redirect.
  *
  * React 18.2 comparison
  * - React 18 commonly used an `onSubmit` handler plus separate `useState`
- *   values for pending and result messages.
+ *   values for pending, result messages, and the OTP request step.
  * - This focused Client Component keeps interactive JavaScript out of the
  *   surrounding Server Component page.
  */

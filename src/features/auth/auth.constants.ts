@@ -15,6 +15,21 @@ enum SignupOutcome {
   Success = "success",
 }
 
+enum LoginMode {
+  Otp = "otp",
+  Password = "password",
+}
+
+enum OtpLoginStep {
+  Code = "code",
+  Email = "email",
+}
+
+enum OtpSendMessage {
+  AlreadySent = "A valid verification code was already sent. Please use that code",
+  Sent = "Verification code sent successfully",
+}
+
 const SignupStepOrder = [
   SignupStep.Hook,
   SignupStep.Name,
@@ -30,6 +45,9 @@ const AgePicks = [20, 22, 24, 26, 28, 30];
 
 export const AuthConstantsCollection = {
   AgePicks,
+  LoginMode,
+  OtpLoginStep,
+  OtpSendMessage,
   SignupOutcome,
   SignupStep,
   SignupStepOrder,

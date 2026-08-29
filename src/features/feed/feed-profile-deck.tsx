@@ -9,6 +9,7 @@ import {
   useState,
   useTransition,
   type KeyboardEvent,
+  type MouseEvent,
   type PointerEvent,
   type TransitionEvent,
 } from "react";
@@ -25,9 +26,15 @@ interface FeedProfileDeckProps {
 }
 
 interface DragSession {
+  hasHorizontalIntent: boolean;
+  hasVerticalIntent: boolean;
   pointerId: number;
   startX: number;
   startY: number;
+}
+
+interface InteractiveGestureTargetInput {
+  target: EventTarget;
 }
 
 interface CompleteSwipeInput {
@@ -41,10 +48,18 @@ interface CardTransformInput {
 }
 
 const SWIPE_THRESHOLD = 92;
-const TAP_MOVE_LIMIT = 28;
+const TAP_MOVE_LIMIT = 10;
 const VISIBLE_CARD_COUNT = 3;
+const INTERACTIVE_GESTURE_SELECTOR =
+  "a, button, input, select, textarea, [contenteditable='true'], [role='button']";
 const FEED_PILL_CLASS_NAME =
   "rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white/80 backdrop-blur-md";
+
+const isInteractiveGestureTarget = ({
+  target,
+}: InteractiveGestureTargetInput): boolean =>
+  target instanceof Element &&
+  Boolean(target.closest(INTERACTIVE_GESTURE_SELECTOR));
 
 const getCardTransform = ({
   dragOffset,
@@ -132,17 +147,26 @@ export const FeedProfileDeck = ({ profiles }: FeedProfileDeckProps) => {
   };
 
   const handlePointerDown = (event: PointerEvent<HTMLElement>) => {
-    if (!event.isPrimary || exitDirection || isSwipePending) {
+    if (
+      !event.isPrimary ||
+      exitDirection ||
+      isSwipePending ||
+      isInteractiveGestureTarget({ target: event.target })
+    ) {
       return;
     }
 
     pointerTravelRef.current = 0;
     didOpenProfileRef.current = false;
+    queuedOffsetRef.current = 0;
     dragSessionRef.current = {
+      hasHorizontalIntent: false,
+      hasVerticalIntent: false,
       pointerId: event.pointerId,
       startX: event.clientX,
       startY: event.clientY,
     };
+    event.currentTarget.setPointerCapture(event.pointerId);
   };
 
   const handlePointerMove = (event: PointerEvent<HTMLElement>) => {
@@ -156,13 +180,25 @@ export const FeedProfileDeck = ({ profiles }: FeedProfileDeckProps) => {
     const verticalOffset = event.clientY - dragSession.startY;
     pointerTravelRef.current = Math.hypot(horizontalOffset, verticalOffset);
 
-    if (pointerTravelRef.current < TAP_MOVE_LIMIT) {
-      return;
+    if (
+      !dragSession.hasHorizontalIntent &&
+      !dragSession.hasVerticalIntent
+    ) {
+      if (pointerTravelRef.current < TAP_MOVE_LIMIT) {
+        return;
+      }
+
+      if (Math.abs(horizontalOffset) <= Math.abs(verticalOffset)) {
+        dragSession.hasVerticalIntent = true;
+        return;
+      }
+
+      dragSession.hasHorizontalIntent = true;
+      setIsDragging(true);
     }
 
-    if (!event.currentTarget.hasPointerCapture(event.pointerId)) {
-      event.currentTarget.setPointerCapture(event.pointerId);
-      setIsDragging(true);
+    if (!dragSession.hasHorizontalIntent) {
+      return;
     }
 
     queuedOffsetRef.current = horizontalOffset;
@@ -186,6 +222,12 @@ export const FeedProfileDeck = ({ profiles }: FeedProfileDeckProps) => {
 
     const finalOffset = event.clientX - dragSession.startX;
     const verticalTravel = event.clientY - dragSession.startY;
+    pointerTravelRef.current = Math.hypot(finalOffset, verticalTravel);
+    const isHorizontalGesture =
+      dragSession.hasHorizontalIntent ||
+      (!dragSession.hasVerticalIntent &&
+        pointerTravelRef.current >= TAP_MOVE_LIMIT &&
+        Math.abs(finalOffset) > Math.abs(verticalTravel));
 
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
@@ -194,16 +236,21 @@ export const FeedProfileDeck = ({ profiles }: FeedProfileDeckProps) => {
     dragSessionRef.current = null;
     cancelPendingFrame();
     setIsDragging(false);
-    setDragOffset(finalOffset);
-    pointerTravelRef.current = Math.hypot(finalOffset, verticalTravel);
 
-    if (Math.abs(finalOffset) < SWIPE_THRESHOLD) {
+    if (!isHorizontalGesture) {
       setDragOffset(0);
 
       if (pointerTravelRef.current < TAP_MOVE_LIMIT) {
         openCurrentProfile();
       }
 
+      return;
+    }
+
+    setDragOffset(finalOffset);
+
+    if (Math.abs(finalOffset) < SWIPE_THRESHOLD) {
+      setDragOffset(0);
       return;
     }
 
@@ -216,6 +263,12 @@ export const FeedProfileDeck = ({ profiles }: FeedProfileDeckProps) => {
   };
 
   const handlePointerCancel = (event: PointerEvent<HTMLElement>) => {
+    const dragSession = dragSessionRef.current;
+
+    if (!dragSession || dragSession.pointerId !== event.pointerId) {
+      return;
+    }
+
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
@@ -227,6 +280,10 @@ export const FeedProfileDeck = ({ profiles }: FeedProfileDeckProps) => {
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+    if (event.target !== event.currentTarget) {
+      return;
+    }
+
     if (event.key === "Enter") {
       event.preventDefault();
       openCurrentProfile();
@@ -248,8 +305,11 @@ export const FeedProfileDeck = ({ profiles }: FeedProfileDeckProps) => {
     }
   };
 
-  const handleCardClick = () => {
-    if (pointerTravelRef.current >= TAP_MOVE_LIMIT) {
+  const handleCardClick = (event: MouseEvent<HTMLElement>) => {
+    if (
+      pointerTravelRef.current >= TAP_MOVE_LIMIT ||
+      isInteractiveGestureTarget({ target: event.target })
+    ) {
       return;
     }
 
@@ -397,7 +457,7 @@ export const FeedProfileDeck = ({ profiles }: FeedProfileDeckProps) => {
                     isTopCard ? handleCardTransitionEnd : undefined
                   }
                   className={`absolute inset-0 overflow-hidden rounded-[2.25rem] border border-white/80 bg-zinc-900 shadow-[0_38px_100px_-36px_rgba(58,20,41,0.7)] select-none ${
-                    isTopCard ? "touch-pan-y" : ""
+                    isTopCard ? "touch-none" : ""
                   } ${
                     isDragging && isTopCard
                       ? "cursor-grabbing"
@@ -566,9 +626,13 @@ export const FeedProfileDeck = ({ profiles }: FeedProfileDeckProps) => {
  *   coordinated manually inside event handlers.
  *
  * Card tap vs swipe
- * - Pointer capture starts only after the pointer has moved, so a tap can still
- *   fire `click` and open `/people/[id]`. A `<Link>` wrapping the swipe surface
- *   would fight dragging.
+ * - `touch-action: none` gives the deck ownership of touches that begin on the
+ *   card, so vertical drift cannot become document scrolling or iOS rubber-band
+ *   bounce. The surrounding route remains scrollable outside the card.
+ * - Pointer capture starts on press, while a 10px direction lock keeps taps
+ *   separate from horizontal drags and ignores vertical-only motion.
+ * - A `<Link>` wrapping the swipe surface would fight dragging; interactive
+ *   descendants are excluded if controls are added to a card later.
  * - Next.js 16 still recommends `<Link>` for ordinary navigation; this is the
  *   swipe exception. Next.js 14.1 used the same App Router `useRouter().push`.
  *
