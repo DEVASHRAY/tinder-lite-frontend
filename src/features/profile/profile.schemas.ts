@@ -66,6 +66,9 @@ const publicProfile = z.object({
 
 const viewer = publicProfile.extend({
   email: z.email(),
+  interestedIn: z
+    .array(z.enum(ProfileConstantsCollection.UserInterest))
+    .default([]),
   phoneNumber: z.string().optional(),
 });
 

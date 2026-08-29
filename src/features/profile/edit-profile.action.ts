@@ -20,6 +20,7 @@ interface ProfileUpdatePayload {
   age: number;
   bio?: string;
   gender: (typeof ProfileConstantsCollection.UserGender)[keyof typeof ProfileConstantsCollection.UserGender];
+  interestedIn: (typeof ProfileConstantsCollection.UserInterest)[keyof typeof ProfileConstantsCollection.UserInterest][];
   jobTitle?: string;
   life?: LifeGroup;
   location?: {
@@ -80,6 +81,14 @@ const isUserGender = (
 ): value is (typeof ProfileConstantsCollection.UserGender)[keyof typeof ProfileConstantsCollection.UserGender] => {
   return Object.values(ProfileConstantsCollection.UserGender).some(
     (gender) => gender === value,
+  );
+};
+
+const isUserInterest = (
+  value: string,
+): value is (typeof ProfileConstantsCollection.UserInterest)[keyof typeof ProfileConstantsCollection.UserInterest] => {
+  return Object.values(ProfileConstantsCollection.UserInterest).some(
+    (interest) => interest === value,
   );
 };
 
@@ -174,6 +183,23 @@ export const editProfileAction = async (
     };
   }
 
+  const interestedIn: (typeof ProfileConstantsCollection.UserInterest)[keyof typeof ProfileConstantsCollection.UserInterest][] =
+    [];
+
+  for (const value of formData.getAll(field.InterestedIn)) {
+    if (typeof value === "string" && isUserInterest(value)) {
+      interestedIn.push(value);
+    }
+  }
+
+  if (!interestedIn.length) {
+    return {
+      ...previousState,
+      message: "Choose who you want to meet",
+      success: false,
+    };
+  }
+
   const cinema = buildOptionalObject({
     entries: [
       [field.ComfortMovie, readField({ formData, name: field.ComfortMovie })],
@@ -232,6 +258,7 @@ export const editProfileAction = async (
   const payload: ProfileUpdatePayload = {
     age,
     gender,
+    interestedIn,
     name,
   };
   const jobTitle = readField({ formData, name: field.JobTitle });

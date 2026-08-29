@@ -43,6 +43,19 @@ interface SelectFieldProps {
   required?: boolean;
 }
 
+interface InterestOption {
+  checked: boolean;
+  label: string;
+  value: string;
+}
+
+interface InterestCheckboxGroupProps {
+  hint?: string;
+  legend: string;
+  name: string;
+  options: InterestOption[];
+}
+
 const CONTROL_CLASS_NAME =
   "min-h-12 w-full rounded-2xl border border-zinc-200 bg-zinc-50/80 px-4 py-3 text-base text-zinc-950 outline-none transition placeholder:text-zinc-400 hover:border-zinc-300 focus:border-[#fd267a] focus:bg-white focus:ring-4 focus:ring-[#fd267a]/10";
 
@@ -138,5 +151,36 @@ export const SelectField = ({
         ))}
       </select>
     </FieldShell>
+  );
+};
+
+export const InterestCheckboxGroup = ({
+  hint,
+  legend,
+  name,
+  options,
+}: InterestCheckboxGroupProps) => {
+  return (
+    <fieldset className="space-y-2 sm:col-span-2">
+      <legend className="text-sm font-semibold text-zinc-800">{legend}</legend>
+      <div className="flex flex-wrap gap-2">
+        {options.map((option) => (
+          <label
+            key={option.value}
+            className="inline-flex min-h-12 cursor-pointer items-center gap-2 rounded-2xl border border-zinc-200 bg-zinc-50/80 px-4 text-sm font-semibold text-zinc-800 hover:border-zinc-300 has-[:checked]:border-[#fd267a] has-[:checked]:bg-[#fff0f5] has-[:checked]:text-[#d91d60]"
+          >
+            <input
+              type="checkbox"
+              name={name}
+              value={option.value}
+              defaultChecked={option.checked}
+              className="size-4 accent-[#fd267a]"
+            />
+            {option.label}
+          </label>
+        ))}
+      </div>
+      {hint ? <p className="text-xs text-zinc-500">{hint}</p> : null}
+    </fieldset>
   );
 };

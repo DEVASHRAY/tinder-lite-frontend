@@ -16,6 +16,11 @@ enum UserInterest {
   Male = "male",
 }
 
+const UserInterestLabel = {
+  [UserInterest.Female]: "Women",
+  [UserInterest.Male]: "Men",
+} satisfies Record<UserInterest, string>;
+
 enum MovieNightStyle {
   CouchRewatch = "couch-rewatch",
   CrowdedFirstDay = "crowded-first-day",
@@ -146,6 +151,7 @@ enum ProfileFormField {
   FoodCourage = "foodCourage",
   Gender = "gender",
   HomeEnergy = "homeEnergy",
+  InterestedIn = "interestedIn",
   JobTitle = "jobTitle",
   MovieNightStyle = "movieNightStyle",
   Name = "name",
@@ -197,6 +203,7 @@ export const ProfileConstantsCollection = {
   SocialBatteryLabel,
   UserGender,
   UserInterest,
+  UserInterestLabel,
   WeekdayPace,
   WeekdayPaceLabel,
 };

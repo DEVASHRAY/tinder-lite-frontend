@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useActionState, useOptimistic, type ReactNode } from "react";
 
 import {
+  InterestCheckboxGroup,
   SelectField,
   TextAreaField,
   TextField,
@@ -184,6 +185,18 @@ export const EditProfileForm = ({ profile }: EditProfileFormProps) => {
               (gender) => ({
                 label: `${gender.charAt(0).toUpperCase()}${gender.slice(1)}`,
                 value: gender,
+              }),
+            )}
+          />
+          <InterestCheckboxGroup
+            hint="Choose one or both. This is who appears in Discover."
+            legend="Looking for"
+            name={field.InterestedIn}
+            options={Object.values(ProfileConstantsCollection.UserInterest).map(
+              (interest) => ({
+                checked: profile.interestedIn.includes(interest),
+                label: ProfileConstantsCollection.UserInterestLabel[interest],
+                value: interest,
               }),
             )}
           />
