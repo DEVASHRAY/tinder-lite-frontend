@@ -8,6 +8,9 @@ import { ProfileConstantsCollection } from "@/features/profile/profile.constants
 type UserGender =
   (typeof ProfileConstantsCollection.UserGender)[keyof typeof ProfileConstantsCollection.UserGender];
 
+type UserInterest =
+  (typeof ProfileConstantsCollection.UserInterest)[keyof typeof ProfileConstantsCollection.UserInterest];
+
 interface ReadFieldInput {
   formData: FormData;
   name: string;
@@ -18,7 +21,7 @@ interface SignupPayload {
   bio?: string;
   email: string;
   gender: UserGender;
-  interestedIn: UserGender[];
+  interestedIn: UserInterest[];
   jobTitle?: string;
   life?: {
     cinema?: Record<string, string>;
@@ -76,7 +79,13 @@ const readField = ({ formData, name }: ReadFieldInput): string => {
 
 const isUserGender = (value: string): value is UserGender => {
   return Object.values(ProfileConstantsCollection.UserGender).some(
-    (gender) => gender === value,
+    (option) => option === value,
+  );
+};
+
+const isUserInterest = (value: string): value is UserInterest => {
+  return Object.values(ProfileConstantsCollection.UserInterest).some(
+    (interest) => interest === value,
   );
 };
 
@@ -152,10 +161,10 @@ export const signupAction = async (
   const weekdayPace = readField({ formData, name: "weekdayPace" });
   const socialBattery = readField({ formData, name: "socialBattery" });
   const movieNightStyle = readField({ formData, name: "movieNightStyle" });
-  const interestedIn: UserGender[] = [];
+  const interestedIn: UserInterest[] = [];
 
   for (const value of formData.getAll("interestedIn")) {
-    if (typeof value === "string" && isUserGender(value)) {
+    if (typeof value === "string" && isUserInterest(value)) {
       interestedIn.push(value);
     }
   }

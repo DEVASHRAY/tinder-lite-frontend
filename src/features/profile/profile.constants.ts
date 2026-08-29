@@ -11,6 +11,11 @@ enum UserGender {
   Other = "other",
 }
 
+enum UserInterest {
+  Female = "female",
+  Male = "male",
+}
+
 enum MovieNightStyle {
   CouchRewatch = "couch-rewatch",
   CrowdedFirstDay = "crowded-first-day",
@@ -191,6 +196,7 @@ export const ProfileConstantsCollection = {
   SocialBattery,
   SocialBatteryLabel,
   UserGender,
+  UserInterest,
   WeekdayPace,
   WeekdayPaceLabel,
 };

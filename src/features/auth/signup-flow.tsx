@@ -16,6 +16,9 @@ import { ProfileConstantsCollection } from "@/features/profile/profile.constants
 type UserGender =
   (typeof ProfileConstantsCollection.UserGender)[keyof typeof ProfileConstantsCollection.UserGender];
 
+type UserInterest =
+  (typeof ProfileConstantsCollection.UserInterest)[keyof typeof ProfileConstantsCollection.UserInterest];
+
 type SignupStep =
   (typeof AuthConstantsCollection.SignupStep)[keyof typeof AuthConstantsCollection.SignupStep];
 
@@ -25,7 +28,7 @@ interface SignupDraft {
   city: string;
   email: string;
   gender: string;
-  interestedIn: UserGender[];
+  interestedIn: UserInterest[];
   jobTitle: string;
   movieNightStyle: string;
   name: string;
@@ -61,7 +64,7 @@ interface SignupPreviewCardProps {
 }
 
 interface ToggleInterestInput {
-  gender: UserGender;
+  interest: UserInterest;
 }
 
 const HUGE_INPUT_CLASS_NAME =
@@ -75,6 +78,11 @@ const GENDER_LABEL = {
   [ProfileConstantsCollection.UserGender.Male]: "Man",
   [ProfileConstantsCollection.UserGender.Other]: "Non-binary",
 } satisfies Record<UserGender, string>;
+
+const INTEREST_LABEL = {
+  [ProfileConstantsCollection.UserInterest.Female]: "Women",
+  [ProfileConstantsCollection.UserInterest.Male]: "Men",
+} satisfies Record<UserInterest, string>;
 
 const emptyDraft: SignupDraft = {
   age: 0,
@@ -261,20 +269,20 @@ export const SignupFlow = () => {
     goNext();
   };
 
-  const toggleInterest = ({ gender }: ToggleInterestInput) => {
+  const toggleInterest = ({ interest }: ToggleInterestInput) => {
     setDraft((current) => {
-      if (current.interestedIn.includes(gender)) {
+      if (current.interestedIn.includes(interest)) {
         return {
           ...current,
           interestedIn: current.interestedIn.filter(
-            (value) => value !== gender,
+            (value) => value !== interest,
           ),
         };
       }
 
       return {
         ...current,
-        interestedIn: [...current.interestedIn, gender],
+        interestedIn: [...current.interestedIn, interest],
       };
     });
   };
@@ -440,13 +448,13 @@ export const SignupFlow = () => {
               Who are you looking for?
             </h2>
             <div className="mt-5 flex flex-wrap gap-2">
-              {Object.values(ProfileConstantsCollection.UserGender).map(
-                (gender) => (
+              {Object.values(ProfileConstantsCollection.UserInterest).map(
+                (interest) => (
                   <SignupChoice
-                    key={gender}
-                    label={GENDER_LABEL[gender]}
-                    selected={draft.interestedIn.includes(gender)}
-                    onSelect={() => toggleInterest({ gender })}
+                    key={interest}
+                    label={INTEREST_LABEL[interest]}
+                    selected={draft.interestedIn.includes(interest)}
+                    onSelect={() => toggleInterest({ interest })}
                   />
                 ),
               )}
