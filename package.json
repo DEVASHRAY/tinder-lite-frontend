@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "deploy": "npm ci && npm run build && pm2 restart tinder-lite-frontend"
   },
   "dependencies": {
     "next": "16.3.2",
