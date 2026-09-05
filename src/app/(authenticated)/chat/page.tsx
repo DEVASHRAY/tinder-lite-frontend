@@ -1,21 +1,14 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { ChatConstantsCollection } from "@/features/chat/chat.constants";
+import { ConversationInbox } from "@/features/chat/conversation-inbox";
 import { loadConversationInbox } from "@/features/chat/chat.data";
-import { ProfileAvatar } from "@/features/profile/profile-avatar";
 
 export const metadata: Metadata = {
   title: "Messages | Tinder Lite",
   description: "Continue conversations with your Tinder Lite matches.",
 };
-
-const inboxDateFormatter = new Intl.DateTimeFormat("en", {
-  day: "numeric",
-  month: "short",
-  timeZone: "UTC",
-});
 
 const ChatInboxPage = async () => {
   let result: Awaited<ReturnType<typeof loadConversationInbox>>;
@@ -70,102 +63,7 @@ const ChatInboxPage = async () => {
           Messages
         </h1>
 
-        {result.conversations.length ? (
-          <ul
-            aria-label="Conversation inbox"
-            className="mt-8 overflow-hidden rounded-3xl border border-zinc-200 bg-white"
-          >
-            {result.conversations.map((conversation) => {
-              const peerName =
-                conversation.peer.name ?? "Tinder Lite member";
-              const deliveryStatus =
-                conversation.lastMessage.deliveryStatus;
-
-              return (
-                <li
-                  key={conversation.conversationId}
-                  className="border-b border-zinc-100 last:border-b-0"
-                >
-                  <Link
-                    href={`/chat/${conversation.connectionId}`}
-                    className="flex min-h-20 items-center gap-4 px-4 py-3 transition hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-[#f32672]/20"
-                  >
-                    <ProfileAvatar
-                      className="size-14 rounded-full text-base"
-                      name={peerName}
-                      photoUrl={conversation.peer.photoUrl ?? undefined}
-                      sizes="56px"
-                    />
-
-                    <span className="min-w-0 flex-1">
-                      <span className="flex items-baseline justify-between gap-3">
-                        <span className="truncate font-semibold">
-                          {peerName}
-                        </span>
-                        <time
-                          dateTime={conversation.lastMessage.createdAt}
-                          className="shrink-0 text-xs text-zinc-400"
-                        >
-                          {inboxDateFormatter.format(
-                            new Date(conversation.lastMessage.createdAt),
-                          )}
-                        </time>
-                      </span>
-
-                      <span className="mt-1 flex items-center gap-1.5 text-sm text-zinc-500">
-                        {conversation.lastMessage.sentByAuthenticatedUser &&
-                        deliveryStatus ? (
-                          <span
-                            aria-label={
-                              deliveryStatus ===
-                              ChatConstantsCollection.MessageDeliveryStatus.Read
-                                ? "Read"
-                                : deliveryStatus ===
-                                    ChatConstantsCollection
-                                      .MessageDeliveryStatus.Delivered
-                                  ? "Delivered"
-                                  : "Sent"
-                            }
-                            className={
-                              deliveryStatus ===
-                              ChatConstantsCollection.MessageDeliveryStatus.Read
-                                ? "shrink-0 font-semibold text-sky-500"
-                                : "shrink-0 font-semibold text-zinc-400"
-                            }
-                          >
-                            {deliveryStatus ===
-                            ChatConstantsCollection.MessageDeliveryStatus.Sent
-                              ? "✓"
-                              : "✓✓"}
-                          </span>
-                        ) : null}
-                        <span className="truncate">
-                          {conversation.lastMessage.textPreview}
-                        </span>
-                      </span>
-                    </span>
-
-                    {conversation.unreadCount ? (
-                      <span
-                        aria-label={`${String(conversation.unreadCount)} unread messages`}
-                        className="flex min-w-6 shrink-0 items-center justify-center rounded-full bg-[#f32672] px-1.5 py-1 text-xs font-bold text-white"
-                      >
-                        {conversation.unreadCount}
-                      </span>
-                    ) : null}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        ) : (
-          <div className="mt-8 rounded-3xl border border-dashed border-zinc-300 bg-white/70 px-6 py-14 text-center">
-            <h2 className="text-lg font-semibold">No messages yet</h2>
-            <p className="mt-2 text-sm leading-6 text-zinc-500">
-              Your conversations will appear here after you message a match.
-            </p>
-          </div>
-        )}
+        <ConversationInbox initialConversations={result.conversations} />
       </section>
     </main>
   );
@@ -174,7 +72,8 @@ const ChatInboxPage = async () => {
 export default ChatInboxPage;
 
 /*
- * The inbox remains a Server Component, so its first page and Zod validation
- * ship no client JavaScript. Next.js 14.1 also supported this App Router
- * pattern; Next.js 16 keeps the same Server Component boundary.
+ * The page keeps its fetch and Zod validation in a Server Component, then
+ * passes validated data to the focused Client Component that owns realtime
+ * inbox behavior. Next.js 14.1 supported the same server/client composition;
+ * Next.js 16 keeps that boundary model.
  */
