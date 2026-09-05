@@ -116,6 +116,25 @@ export const AppHeader = ({ viewer }: AppHeaderProps) => {
             >
               Connections
             </HeaderLink>
+            <HeaderLink
+              href="/chat"
+              icon={
+                <svg
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                  className="size-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                >
+                  <path d="M21 15a4 4 0 01-4 4H8l-5 3V7a4 4 0 014-4h10a4 4 0 014 4z" />
+                </svg>
+              }
+            >
+              Inbox
+            </HeaderLink>
           </nav>
         )}
 
