@@ -10,7 +10,15 @@ enum MessageDeliveryStatus {
   Sent = "SENT",
 }
 
+enum MessageHistoryLoadOutcome {
+  Failure = "failure",
+  Missing = "missing",
+  Success = "success",
+  Unauthorized = "unauthorized",
+}
+
 export const ChatConstantsCollection = {
   ConversationInboxLoadOutcome,
   MessageDeliveryStatus,
+  MessageHistoryLoadOutcome,
 };

@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { useEffect } from "react";
 
-import { ChatConstantsCollection } from "@/features/chat/chat.constants";
 import type { ConversationInboxItem } from "@/features/chat/chat.data";
 import { chatSocket } from "@/features/chat/chat-socket";
+import { MessageDeliveryIcon } from "@/features/chat/message-delivery-icon";
 import { ProfileAvatar } from "@/features/profile/profile-avatar";
 
 interface ConversationInboxProps {
@@ -98,45 +98,7 @@ export const ConversationInbox = ({
                 <span className="mt-1 flex items-center gap-1.5 text-sm text-zinc-500">
                   {conversation.lastMessage.sentByAuthenticatedUser &&
                   deliveryStatus ? (
-                    <span
-                      aria-label={
-                        deliveryStatus ===
-                        ChatConstantsCollection.MessageDeliveryStatus.Read
-                          ? "Read"
-                          : deliveryStatus ===
-                              ChatConstantsCollection.MessageDeliveryStatus
-                                .Delivered
-                            ? "Delivered"
-                            : "Sent"
-                      }
-                      className={
-                        deliveryStatus ===
-                        ChatConstantsCollection.MessageDeliveryStatus.Read
-                          ? "shrink-0 font-semibold text-sky-500"
-                          : "shrink-0 font-semibold text-zinc-400"
-                      }
-                    >
-                      <svg
-                        aria-hidden="true"
-                        viewBox="0 0 18 14"
-                        className="h-3.5 w-[1.125rem]"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                      >
-                        {deliveryStatus ===
-                        ChatConstantsCollection.MessageDeliveryStatus.Sent ? (
-                          <path d="m3 7 3 3 7-7" />
-                        ) : (
-                          <>
-                            <path d="m1 7 3 3 7-7" />
-                            <path d="m6 8 3 3 7-7" />
-                          </>
-                        )}
-                      </svg>
-                    </span>
+                    <MessageDeliveryIcon status={deliveryStatus} />
                   ) : null}
                   <span className="truncate">
                     {conversation.lastMessage.textPreview}
