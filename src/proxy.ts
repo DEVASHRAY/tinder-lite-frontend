@@ -10,7 +10,13 @@ export const proxy = (request: NextRequest): NextResponse => {
 };
 
 export const config = {
-  matcher: ["/feed", "/profile", "/connections", "/people/:path*"],
+  matcher: [
+    "/feed",
+    "/profile",
+    "/connections",
+    "/people/:path*",
+    "/chat/:path*",
+  ],
 };
 /*
  * Learning notes
